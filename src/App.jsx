@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useId, useRef } from "react";
 import {
-  Home, BarChart3, LogOut, RotateCcw, ChevronRight, Bell, Calendar,
+  Home as HomeIcon, BarChart3, LogOut, RotateCcw, ChevronRight, Bell, Calendar,
   Lock, CreditCard, Users, Plus, Baby, Settings, ShieldAlert, Play,
 } from "lucide-react";
 
@@ -186,7 +186,7 @@ const Scroll = ({ children, style, max = 720 }) => (
 /* ===================== LEFT NAV RAIL ===================== */
 function Rail({ active, onNav, user, onToggleMember, onIntro, onLogout }) {
   const items = [
-    { key: "library", label: "Home", icon: <Home size={20} /> },
+    { key: "library", label: "Home", icon: <HomeIcon size={20} /> },
     { key: "pictures", label: "Pictures", maze: PALETTE.pictures },
     { key: "cinemas", label: "Cinemas", maze: PALETTE.cinemas },
     { key: "filmschool", label: "Film School", maze: PALETTE.filmschool },
