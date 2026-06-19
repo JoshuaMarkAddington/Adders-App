@@ -618,7 +618,7 @@ function FilmSchoolDashboard({ user, onSettings }) {
       <Card style={{ textAlign: "center", padding: 26, borderStyle: "dashed", borderColor: C.line }}>
         <Calendar size={22} color={C.muted} />
         <div style={{ color: C.text, fontWeight: 600, marginTop: 8 }}>Your schedule will appear here</div>
-        <div style={{ color: C.muted, fontSize: 12.5, marginTop: 6 }}>Send the timetable and I'll wire it in.</div>
+        <div style={{ color: C.muted, fontSize: 12.5, marginTop: 6 }}>Your schedule will appear here once it's confirmed.</div>
       </Card>
 
       <SectionTitle>Announcements</SectionTitle>
