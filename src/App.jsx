@@ -1518,8 +1518,13 @@ const rowChip = { display: "flex", justifyContent: "space-between", alignItems: 
 const browserBar = { width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "13px 18px", borderBottom: `1px solid ${C.line}`, background: C.bg2, boxSizing: "border-box" };
 
 /* ===================== APP SHELL ===================== */
+function getInitialScreen() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get("signup") === "1" ? "fs-form" : "library";
+}
+
 export default function App() {
-  const [screen, setScreen] = useState("library"); // boots straight to the library
+  const [screen, setScreen] = useState(getInitialScreen); // boots straight to the library, or the sign-up form if linked directly
   const [trans, setTrans] = useState(null);
   const [user, setUser] = useState({ name: "Jordan Rivers", member: true, plan: "Standard", students: 3 });
 
