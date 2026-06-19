@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useId, useRef } from "react";
 import {
-  Home as HomeIcon, BarChart3, LogOut, RotateCcw, ChevronRight, Bell, Calendar,
+  Home as HomeIcon, BarChart3, LogOut, ChevronRight, Bell, Calendar,
   Lock, CreditCard, Users, Plus, Baby, Settings, ShieldAlert, Play,
 } from "lucide-react";
 
@@ -184,7 +184,7 @@ const Scroll = ({ children, style, max = 720 }) => (
 );
 
 /* ===================== LEFT NAV RAIL ===================== */
-function Rail({ active, onNav, user, onToggleMember, onIntro, onLogout }) {
+function Rail({ active, onNav, onIntro, onLogout }) {
   const items = [
     { key: "library", label: "Home", icon: <HomeIcon size={20} /> },
     { key: "pictures", label: "Pictures", maze: PALETTE.pictures },
@@ -224,12 +224,9 @@ function Rail({ active, onNav, user, onToggleMember, onIntro, onLogout }) {
       </div>
 
       <div style={{ marginTop: "auto", padding: "6px 10px", display: "flex", flexDirection: "column", gap: 4 }}>
-        <div className="rail-label" style={{ fontSize: 10, color: "#4D5775", letterSpacing: 2, padding: "8px 8px 2px" }}>OWNER / PROTOTYPE</div>
+        <div className="rail-label" style={{ fontSize: 10, color: "#4D5775", letterSpacing: 2, padding: "8px 8px 2px" }}>OWNER</div>
         <RailMini icon={<BarChart3 size={18} />} label="Admin dashboard" accent={C.blue} onClick={() => onNav("admin")} />
         <RailMini icon={<Play size={18} />} label="Replay intro" onClick={onIntro} />
-        <RailMini icon={<RotateCcw size={18} />}
-          label={user.member ? "Viewing: Member" : "Viewing: Non-member"}
-          accent={user.member ? C.copper : C.muted} onClick={onToggleMember} />
         <div style={{ height: 1, background: C.line, margin: "6px 8px" }} />
         <RailMini icon={<LogOut size={18} />} label="Log out" onClick={onLogout} />
       </div>
@@ -317,7 +314,7 @@ function Verify({ onDone }) {
       <MazeMark pair={PALETTE.entertainment} size={70} style={{ animation: "spinIn 1.2s ease both" }} />
       <h2 style={{ fontFamily: "'Cinzel',serif", color: C.text, marginTop: 22, marginBottom: 6, fontSize: 22 }}>Verify it's you</h2>
       <p style={{ color: C.muted, fontSize: 14, textAlign: "center", maxWidth: 300, marginBottom: 26 }}>
-        Enter the 6-digit code we sent. (Demo: type anything)
+        Enter the 6-digit code we sent.
       </p>
       <div style={{ display: "flex", gap: 9 }}>
         {vals.map((v, i) => (
@@ -1183,9 +1180,6 @@ function FormContent({ step, d, set, firstName, onDone }) {
               <div style={{ color:C.muted, fontSize:12.5, marginTop:3, lineHeight:1.5 }}>
                 A second email with everything you need to know — what to bring, what to wear, and what to expect — will be sent once finalised.
               </div>
-              <div style={{ color:C.muted, fontSize:11.5, marginTop:6, fontStyle:"italic" }}>
-                Content placeholder — drop the copy in whenever you're ready.
-              </div>
             </div>
           </div>
         </div>
@@ -1304,7 +1298,7 @@ function TimetableHint() {
           <Calendar size={28} color={C.muted} />
           <div style={{ color:C.text, fontWeight:600, fontSize:14 }}>Timetable coming soon</div>
           <div style={{ color:C.muted, fontSize:12.5, textAlign:"center", lineHeight:1.6, maxWidth:320 }}>
-            Send the session schedule and I'll drop it in here — formatted as a proper weekly grid with days, times and module names.
+            Your weekly schedule — days, times and module names — will appear here as soon as it's confirmed.
           </div>
         </div>
       )}
@@ -1399,7 +1393,7 @@ function PaymentStep({ d, set }) {
         <MazeMark pair={PALETTE.filmschool} size={52} className="mz-idle" />
         <h2 style={{ fontFamily:"'Cinzel',serif", fontSize:26, color:C.text, marginTop:14, marginBottom:0 }}>Choose your membership</h2>
         <p style={{ color:C.muted, fontSize:14, lineHeight:1.6, marginTop:8 }}>
-          Longer memberships save you more. Prices shown are placeholders — update when confirmed.
+          Longer memberships save you more. Choose the plan that suits you.
         </p>
       </div>
 
@@ -1591,8 +1585,7 @@ export default function App() {
       `}</style>
 
       {!noNav && (
-        <Rail active={railActive} user={user} onNav={goSub}
-          onToggleMember={() => setUser({ ...user, member: !user.member })}
+        <Rail active={railActive} onNav={goSub}
           onIntro={() => setScreen("splash")}
           onLogout={() => setScreen("auth")} />
       )}
