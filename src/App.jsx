@@ -314,7 +314,7 @@ function Verify({ onDone }) {
       <MazeMark pair={PALETTE.entertainment} size={70} style={{ animation: "spinIn 1.2s ease both" }} />
       <h2 style={{ fontFamily: "'Cinzel',serif", color: C.text, marginTop: 22, marginBottom: 6, fontSize: 22 }}>Verify it's you</h2>
       <p style={{ color: C.muted, fontSize: 14, textAlign: "center", maxWidth: 300, marginBottom: 26 }}>
-        Enter the 6-digit code we sent. (Demo: type anything)
+        Enter the 6-digit code we sent.
       </p>
       <div style={{ display: "flex", gap: 9 }}>
         {vals.map((v, i) => (
@@ -1180,9 +1180,6 @@ function FormContent({ step, d, set, firstName, onDone }) {
               <div style={{ color:C.muted, fontSize:12.5, marginTop:3, lineHeight:1.5 }}>
                 A second email with everything you need to know — what to bring, what to wear, and what to expect — will be sent once finalised.
               </div>
-              <div style={{ color:C.muted, fontSize:11.5, marginTop:6, fontStyle:"italic" }}>
-                Content placeholder — drop the copy in whenever you're ready.
-              </div>
             </div>
           </div>
         </div>
@@ -1301,7 +1298,7 @@ function TimetableHint() {
           <Calendar size={28} color={C.muted} />
           <div style={{ color:C.text, fontWeight:600, fontSize:14 }}>Timetable coming soon</div>
           <div style={{ color:C.muted, fontSize:12.5, textAlign:"center", lineHeight:1.6, maxWidth:320 }}>
-            Send the session schedule and I'll drop it in here — formatted as a proper weekly grid with days, times and module names.
+            Your weekly schedule — days, times and module names — will appear here as soon as it's confirmed.
           </div>
         </div>
       )}
@@ -1396,7 +1393,7 @@ function PaymentStep({ d, set }) {
         <MazeMark pair={PALETTE.filmschool} size={52} className="mz-idle" />
         <h2 style={{ fontFamily:"'Cinzel',serif", fontSize:26, color:C.text, marginTop:14, marginBottom:0 }}>Choose your membership</h2>
         <p style={{ color:C.muted, fontSize:14, lineHeight:1.6, marginTop:8 }}>
-          Longer memberships save you more. Prices shown are placeholders — update when confirmed.
+          Longer memberships save you more. Choose the plan that suits you.
         </p>
       </div>
 
