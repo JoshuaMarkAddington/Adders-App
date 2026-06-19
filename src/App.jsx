@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useId, useRef } from "react";
 import {
-  Home as HomeIcon, BarChart3, LogOut, RotateCcw, ChevronRight, Bell, Calendar,
+  Home as HomeIcon, BarChart3, LogOut, ChevronRight, Bell, Calendar,
   Lock, CreditCard, Users, Plus, Baby, Settings, ShieldAlert, Play,
 } from "lucide-react";
 
@@ -184,7 +184,7 @@ const Scroll = ({ children, style, max = 720 }) => (
 );
 
 /* ===================== LEFT NAV RAIL ===================== */
-function Rail({ active, onNav, user, onToggleMember, onIntro, onLogout }) {
+function Rail({ active, onNav, onIntro, onLogout }) {
   const items = [
     { key: "library", label: "Home", icon: <HomeIcon size={20} /> },
     { key: "pictures", label: "Pictures", maze: PALETTE.pictures },
@@ -224,12 +224,9 @@ function Rail({ active, onNav, user, onToggleMember, onIntro, onLogout }) {
       </div>
 
       <div style={{ marginTop: "auto", padding: "6px 10px", display: "flex", flexDirection: "column", gap: 4 }}>
-        <div className="rail-label" style={{ fontSize: 10, color: "#4D5775", letterSpacing: 2, padding: "8px 8px 2px" }}>OWNER / PROTOTYPE</div>
+        <div className="rail-label" style={{ fontSize: 10, color: "#4D5775", letterSpacing: 2, padding: "8px 8px 2px" }}>OWNER</div>
         <RailMini icon={<BarChart3 size={18} />} label="Admin dashboard" accent={C.blue} onClick={() => onNav("admin")} />
         <RailMini icon={<Play size={18} />} label="Replay intro" onClick={onIntro} />
-        <RailMini icon={<RotateCcw size={18} />}
-          label={user.member ? "Viewing: Member" : "Viewing: Non-member"}
-          accent={user.member ? C.copper : C.muted} onClick={onToggleMember} />
         <div style={{ height: 1, background: C.line, margin: "6px 8px" }} />
         <RailMini icon={<LogOut size={18} />} label="Log out" onClick={onLogout} />
       </div>
@@ -1591,8 +1588,7 @@ export default function App() {
       `}</style>
 
       {!noNav && (
-        <Rail active={railActive} user={user} onNav={goSub}
-          onToggleMember={() => setUser({ ...user, member: !user.member })}
+        <Rail active={railActive} onNav={goSub}
           onIntro={() => setScreen("splash")}
           onLogout={() => setScreen("auth")} />
       )}
