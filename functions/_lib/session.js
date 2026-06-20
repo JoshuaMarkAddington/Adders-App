@@ -76,6 +76,14 @@ export async function destroyAdminSession(db, request) {
   return cookieHeader(ADMIN_COOKIE, "", { expires: 0 });
 }
 
+// The single owner account allowed to see decrypted personal data.
+// Defaults to "Joshua Addington"; override with the OWNER_USERNAME secret.
+export function isOwner(env, admin) {
+  if (!admin) return false;
+  const owner = (env.OWNER_USERNAME || "Joshua Addington").trim().toLowerCase();
+  return (admin.username || "").trim().toLowerCase() === owner;
+}
+
 // Shape a user row for the client (never leak the password hash).
 export function publicUser(row) {
   if (!row) return null;

@@ -74,32 +74,40 @@ same `deliver()` function later.)
 ## Data protection & GDPR
 
 This app handles children's personal data, including special-category health
-information, so it is encrypted on two levels:
+information, so it is protected with defence in depth
+(`functions/_lib/encryption.js`):
 
 1. **At rest by Cloudflare** — D1 databases are encrypted by the platform.
-2. **Field-level app encryption** — every sensitive field on a Film School
+2. **AES-256-GCM field encryption** — every sensitive field on a Film School
    application (child name & DOB, guardian, full address, email, phone,
    emergency contact, allergies, additional needs, health issues) is encrypted
-   with **AES-256-GCM** before it is written to the database
-   (`functions/_lib/encryption.js`). In the database these fields are
-   unreadable ciphertext.
+   before it is written. In the database these fields are unreadable ciphertext.
+3. **HKDF key derivation** — the stored secret is never the working key; an AES
+   key is derived from it with HKDF-SHA256.
+4. **Per-record binding (AAD)** — each ciphertext is tied to its own record id,
+   so it cannot be tampered with or moved to another row.
+5. **Two independent layers** — when `DATA_ENCRYPTION_KEY2` is set, data is
+   encrypted a second time under a separate key. Reading it then requires
+   **both** secrets, which should be stored separately.
 
-Set the encryption key as a secret (generate a fresh one and keep it safe — if
-it is lost, encrypted data cannot be recovered):
+Set both keys as secrets (generate fresh ones and keep them safe — if a key is
+lost, the data it protects cannot be recovered):
 
 ```bash
 node -e 'console.log(require("crypto").randomBytes(32).toString("base64"))'
 npx wrangler pages secret put DATA_ENCRYPTION_KEY
+node -e 'console.log(require("crypto").randomBytes(32).toString("base64"))'
+npx wrangler pages secret put DATA_ENCRYPTION_KEY2
 ```
 
 Other GDPR-supporting features:
 
-- **Owner registry** — the admin dashboard lists every registered child with
-  guardian and contact details. The data is decrypted **server-side, only for a
-  signed-in admin**, and never exposed to anyone else
-  (`GET /api/admin/applications`).
+- **Owner-only access** — the registry that lists every registered child with
+  guardian and contact details is decrypted **server-side, only for the owner
+  account** (`Joshua Addington`, or whoever `OWNER_USERNAME` names). No other
+  admin can ever see the personal data (`GET /api/admin/applications`).
 - **Right to erasure** — each record has a "Delete record (GDPR erasure)"
-  action that permanently removes it (`DELETE /api/admin/applications/:id`).
+  action; owner only (`DELETE /api/admin/applications/:id`).
 - **Data minimisation** — login responses are constant-time and never reveal
   whether an email exists; passwords and tokens are only ever stored hashed.
 

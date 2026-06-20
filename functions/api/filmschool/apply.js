@@ -21,7 +21,8 @@ export async function onRequestPost({ request, env }) {
   const id = newId("app");
 
   // Encrypt every personal/contact/health field before it touches the DB.
-  const E = (v) => encryptField(env, v);
+  // Each ciphertext is bound to this record's id (AAD).
+  const E = (v) => encryptField(env, v, id);
   const [
     studentName, studentDob, guardianName, guardianDob,
     addressLine1, addressLine2, city, county, postcode, email, phone,

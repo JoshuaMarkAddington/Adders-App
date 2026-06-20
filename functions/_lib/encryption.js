@@ -1,15 +1,24 @@
 // Field-level encryption for sensitive personal data (GDPR).
 //
-// Cloudflare D1 is already encrypted at rest; this adds a second, app-level
-// layer so that special-category data (children's details, health info,
-// contact details) is unreadable in the database without the secret key.
+// Defence in depth — sensitive fields are protected by several layers:
+//   1. Cloudflare D1 is encrypted at rest by the platform.
+//   2. App-level AES-256-GCM encryption before anything is written.
+//   3. Keys are not used raw — an AES key is derived from each secret with
+//      HKDF-SHA256, so the stored secret is never the working key.
+//   4. Each ciphertext is bound to its own record with AES-GCM additional
+//      authenticated data (AAD), so it cannot be tampered with or moved to
+//      another row.
+//   5. Optional SECOND independent layer: if DATA_ENCRYPTION_KEY2 is set, the
+//      data is encrypted again under a separate key. Reading it then requires
+//      BOTH secrets, which can be stored separately.
 //
-// Key: env.DATA_ENCRYPTION_KEY — a base64-encoded 32-byte (256-bit) value,
-// stored as a Cloudflare secret (never in the repo). Generate one with:
+// Keys are base64-encoded 32-byte values, kept as Cloudflare secrets (never in
+// the repo). Generate one with:
 //   node -e 'console.log(require("crypto").randomBytes(32).toString("base64"))'
 
 const enc = new TextEncoder();
 const dec = new TextDecoder();
+const HKDF_SALT = enc.encode("adders-entertainment::pii::v1");
 
 function b64ToBytes(b64) {
   const bin = atob(b64);
@@ -24,41 +33,72 @@ function bytesToB64(bytes) {
   return btoa(bin);
 }
 
-let keyPromise = null;
-let keySource = null;
-
-function getKey(env) {
-  const raw = env.DATA_ENCRYPTION_KEY;
-  if (!raw) throw new Error("DATA_ENCRYPTION_KEY is not configured");
-  if (keyPromise && keySource === raw) return keyPromise;
-  keySource = raw;
-  keyPromise = crypto.subtle.importKey("raw", b64ToBytes(raw), "AES-GCM", false, ["encrypt", "decrypt"]);
-  return keyPromise;
+// Derive (and cache) an AES-GCM key from a base secret via HKDF-SHA256.
+const keyCache = new Map();
+async function aesKeyFor(env, varName, info) {
+  const raw = env[varName];
+  if (!raw) throw new Error(`${varName} is not configured`);
+  const cacheKey = `${varName}|${info}|${raw}`;
+  if (keyCache.has(cacheKey)) return keyCache.get(cacheKey);
+  const base = await crypto.subtle.importKey("raw", b64ToBytes(raw), "HKDF", false, ["deriveKey"]);
+  const aesKey = await crypto.subtle.deriveKey(
+    { name: "HKDF", hash: "SHA-256", salt: HKDF_SALT, info: enc.encode(info) },
+    base,
+    { name: "AES-GCM", length: 256 },
+    false,
+    ["encrypt", "decrypt"],
+  );
+  keyCache.set(cacheKey, aesKey);
+  return aesKey;
 }
 
-// Encrypt a string. Returns "v1:<base64(iv|ciphertext)>" or "" for empty input.
-export async function encryptField(env, plaintext) {
-  if (plaintext == null || plaintext === "") return "";
-  const key = await getKey(env);
+async function encOnce(key, dataBytes, aadBytes) {
   const iv = crypto.getRandomValues(new Uint8Array(12));
-  const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, enc.encode(String(plaintext)));
-  const combined = new Uint8Array(iv.length + ct.byteLength);
-  combined.set(iv, 0);
-  combined.set(new Uint8Array(ct), iv.length);
-  return "v1:" + bytesToB64(combined);
+  const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv, additionalData: aadBytes }, key, dataBytes);
+  const out = new Uint8Array(iv.length + ct.byteLength);
+  out.set(iv, 0);
+  out.set(new Uint8Array(ct), iv.length);
+  return out;
 }
 
-// Decrypt a value produced by encryptField. Passes through plaintext/empty
-// values so older or unencrypted rows never throw.
-export async function decryptField(env, value) {
+async function decOnce(key, blob, aadBytes) {
+  const iv = blob.slice(0, 12);
+  const ct = blob.slice(12);
+  const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv, additionalData: aadBytes }, key, ct);
+  return new Uint8Array(pt);
+}
+
+// Encrypt a string, bound to `aad` (e.g. the record id). Returns
+// "v1:<base64>" (single layer) or "v2:<base64>" (two independent layers),
+// or "" for empty input.
+export async function encryptField(env, plaintext, aad = "") {
+  if (plaintext == null || plaintext === "") return "";
+  const aadBytes = enc.encode(String(aad));
+  const k1 = await aesKeyFor(env, "DATA_ENCRYPTION_KEY", "adders-pii-layer1");
+  let blob = await encOnce(k1, enc.encode(String(plaintext)), aadBytes);
+  if (env.DATA_ENCRYPTION_KEY2) {
+    const k2 = await aesKeyFor(env, "DATA_ENCRYPTION_KEY2", "adders-pii-layer2");
+    blob = await encOnce(k2, blob, aadBytes);
+    return "v2:" + bytesToB64(blob);
+  }
+  return "v1:" + bytesToB64(blob);
+}
+
+// Decrypt a value produced by encryptField using the same `aad`. Passes through
+// plaintext/empty values so unencrypted rows never throw.
+export async function decryptField(env, value, aad = "") {
   if (value == null || value === "") return "";
-  if (typeof value !== "string" || !value.startsWith("v1:")) return value;
+  if (typeof value !== "string" || !(value.startsWith("v1:") || value.startsWith("v2:"))) return value;
+  const aadBytes = enc.encode(String(aad));
   try {
-    const key = await getKey(env);
-    const combined = b64ToBytes(value.slice(3));
-    const iv = combined.slice(0, 12);
-    const ct = combined.slice(12);
-    const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, ct);
+    const twoLayer = value.startsWith("v2:");
+    let blob = b64ToBytes(value.slice(3));
+    if (twoLayer) {
+      const k2 = await aesKeyFor(env, "DATA_ENCRYPTION_KEY2", "adders-pii-layer2");
+      blob = await decOnce(k2, blob, aadBytes);
+    }
+    const k1 = await aesKeyFor(env, "DATA_ENCRYPTION_KEY", "adders-pii-layer1");
+    const pt = await decOnce(k1, blob, aadBytes);
     return dec.decode(pt);
   } catch {
     return "";
