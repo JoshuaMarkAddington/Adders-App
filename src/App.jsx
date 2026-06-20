@@ -405,6 +405,9 @@ function Verify({ onDone, devCode, onBack }) {
 const IMG = "https://fs.addersentertainment.org/";
 // Placeholder trailer — swap this URL for the real one when you send it
 const TRAILER_URL = "https://eu2.contabostorage.com/ae102cc57ca240d1be6909977c40db2d:adders-pictures/video/rp1-t-090622.mp4";
+// Adders Pictures website — opens in a new browser tab.
+const PICTURES_URL = "https://pictures.addersentertainment.org/";
+const openPictures = () => window.open(PICTURES_URL, "_blank", "noopener,noreferrer");
 
 function VideoHero({ onOpen }) {
   const ref = useRef(null);
@@ -578,15 +581,18 @@ function PicturesBrowser() {
         <span style={{ display: "flex", gap: 6 }}>
           {[C.crimson, C.gold, "#5BC08A"].map((c) => <span key={c} style={{ width: 11, height: 11, borderRadius: 6, background: c }} />)}
         </span>
-        <span style={{ color: C.muted, fontSize: 12.5 }}>addersentertainment.org</span>
+        <span style={{ color: C.muted, fontSize: 12.5 }}>pictures.addersentertainment.org</span>
         <span style={{ width: 40 }} />
       </div>
       <Center style={{ flex: 1 }}>
         <MazeMark pair={PALETTE.pictures} size={110} className="mz-idle" />
         <div style={{ marginTop: 18 }}><Wordmark name="ADDERS" sub="PICTURES" subColor={C.gold} size={28} /></div>
         <p style={{ color: C.muted, marginTop: 22, textAlign: "center", maxWidth: 340, fontSize: 14, lineHeight: 1.6 }}>
-          Opens the Adders Pictures website inside an in-app browser — visitors never leave the app.
+          Visit the Adders Pictures website — our film & production house.
         </p>
+        <div style={{ marginTop: 22 }}>
+          <Btn color={C.gold} onClick={openPictures}>Open Adders Pictures ↗</Btn>
+        </div>
       </Center>
     </div>
   );
@@ -743,7 +749,14 @@ function Admin({ onLogout }) {
   const free = cap - taken;
   const sorted = [...MODULE_DATA].sort((a, b) => (a[2] - a[1]) - (b[2] - b[1]));
   const [stats, setStats] = useState(null);
-  useEffect(() => { api.adminStats().then(setStats).catch(() => {}); }, []);
+  const [apps, setApps] = useState(null);
+  const [openApp, setOpenApp] = useState(null);
+  const loadApps = () => api.adminApplications().then((r) => setApps(r.applications)).catch(() => setApps([]));
+  useEffect(() => { api.adminStats().then(setStats).catch(() => {}); loadApps(); }, []);
+  const removeApp = async (id) => {
+    try { await api.adminDeleteApplication(id); setApps((list) => (list || []).filter((a) => a.id !== id)); setOpenApp(null); }
+    catch {}
+  };
   const t = stats?.totals;
   const liveTiles = [
     [t ? String(t.members) : "—", "Members"],
@@ -796,6 +809,61 @@ function Admin({ onLogout }) {
               </div>
               <div style={{ color: C.muted, fontSize: 11, marginTop: 3 }}>{t}/{c} seats taken</div>
             </div>
+          );
+        })}
+      </div>
+
+      <SectionTitle>Film School — registered children</SectionTitle>
+      <div style={{ color: C.muted, fontSize: 12, marginBottom: 10, display: "flex", gap: 6, alignItems: "center" }}>
+        <Lock size={12} /> Encrypted at rest · decrypted here for you only
+      </div>
+      {apps === null && <div style={{ color: C.muted, fontSize: 13 }}>Loading…</div>}
+      {apps && apps.length === 0 && <div style={{ color: C.muted, fontSize: 13 }}>No applications yet.</div>}
+      <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
+        {(apps || []).map((a) => {
+          const open = openApp === a.id;
+          return (
+            <Card key={a.id} style={{ padding: 0, overflow: "hidden" }}>
+              <button onClick={() => setOpenApp(open ? null : a.id)} style={{
+                width: "100%", textAlign: "left", background: "transparent", border: "none", cursor: "pointer",
+                padding: "13px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12,
+              }}>
+                <span style={{ display: "flex", flexDirection: "column" }}>
+                  <span style={{ color: C.text, fontWeight: 700, fontSize: 14.5 }}>{a.studentName || "—"}</span>
+                  <span style={{ color: C.muted, fontSize: 12, marginTop: 2 }}>Guardian: {a.guardianName || "—"} · {a.email || "no email"}</span>
+                </span>
+                <span style={{ color: C.muted, fontSize: 12, whiteSpace: "nowrap" }}>{a.plan || a.status} {open ? "▲" : "▼"}</span>
+              </button>
+              {open && (
+                <div style={{ padding: "4px 16px 16px", borderTop: `1px solid ${C.line}`, display: "flex", flexDirection: "column", gap: 7 }}>
+                  {[
+                    ["Child date of birth", a.studentDob],
+                    ["Modules", a.modules.join(", ")],
+                    ["New to film", a.newToFilm ? "Yes" : "No"],
+                    ["Guardian DOB", a.guardianDob],
+                    ["Address", a.address],
+                    ["Email", a.email],
+                    ["Phone", a.phone],
+                    ["Emergency contact", [a.emergencyName, a.emergencyPhone, a.emergencyRelation].filter(Boolean).join(" · ")],
+                    ["Allergies", a.allergies],
+                    ["Additional needs", a.additionalNeeds],
+                    ["Health issues", a.healthIssues],
+                    ["Plan", a.plan],
+                    ["Status", a.status],
+                  ].map(([k, v]) => (
+                    <div key={k} style={{ display: "flex", justifyContent: "space-between", gap: 16, fontSize: 12.5 }}>
+                      <span style={{ color: C.muted, flexShrink: 0 }}>{k}</span>
+                      <span style={{ color: C.text, textAlign: "right" }}>{v || "—"}</span>
+                    </div>
+                  ))}
+                  <button
+                    onClick={() => { if (window.confirm(`Permanently delete ${a.studentName || "this"} application? This cannot be undone.`)) removeApp(a.id); }}
+                    style={{ marginTop: 8, alignSelf: "flex-start", background: "transparent", border: `1px solid ${C.crimson}55`, color: C.crimson, fontSize: 12, fontWeight: 600, padding: "7px 12px", borderRadius: 9, cursor: "pointer" }}>
+                    Delete record (GDPR erasure)
+                  </button>
+                </div>
+              )}
+            </Card>
           );
         })}
       </div>
@@ -1681,6 +1749,7 @@ export default function App() {
 
   const goSub = (key) => {
     if (key === "library" || key === "admin") { setScreen(key); return; }
+    if (key === "pictures") { openPictures(); return; } // open the real website in a new tab
     const s = SUBS[key];
     const target = key === "filmschool" ? (user && user.member ? "fs-dash" : "fs-join") : key;
     setTrans({ pair: s.pair, color: s.color, title: s.title, target });

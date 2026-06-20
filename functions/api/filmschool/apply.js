@@ -1,9 +1,11 @@
 import { json, error, readJson } from "../../_lib/http.js";
 import { getSessionUser, publicUser } from "../../_lib/session.js";
 import { newId } from "../../_lib/crypto.js";
+import { encryptField } from "../../_lib/encryption.js";
 
 // POST /api/filmschool/apply  — saves the application.
-// Payments are not wired yet, so the application is stored as
+// Sensitive personal data (child details, contact info, health) is encrypted
+// at rest. Payments are not wired yet, so the application is stored as
 // 'awaiting_payment' and membership access is granted in the meantime.
 export async function onRequestPost({ request, env }) {
   const db = env.DB;
@@ -18,6 +20,24 @@ export async function onRequestPost({ request, env }) {
   const planMonths = plan.months || null;
   const id = newId("app");
 
+  // Encrypt every personal/contact/health field before it touches the DB.
+  const E = (v) => encryptField(env, v);
+  const [
+    studentName, studentDob, guardianName, guardianDob,
+    addressLine1, addressLine2, city, county, postcode, email, phone,
+    emergencyName, emergencyPhone, emergencyRelation,
+    allergies, additionalNeeds, healthIssues,
+  ] = await Promise.all([
+    E(d.studentName), E(d.studentDob), E(d.guardianName), E(d.guardianDob),
+    E(d.addressLine1), E(d.addressLine2), E(d.city), E(d.county), E(d.postcode), E(d.email), E(d.phone),
+    E(d.emergencySame ? d.guardianName : d.emergencyName),
+    E(d.emergencySame ? d.phone : d.emergencyPhone),
+    E(d.emergencySame ? "Guardian" : d.emergencyRelation),
+    E(detail(d.allergies, d.allergiesDetail)),
+    E(detail(d.additionalNeeds, d.additionalNeedsDetail)),
+    E(detail(d.healthIssues, d.healthIssuesDetail)),
+  ]);
+
   await db
     .prepare(
       `INSERT INTO applications (
@@ -31,27 +51,27 @@ export async function onRequestPost({ request, env }) {
     .bind(
       id,
       user ? user.id : null,
-      d.studentName,
-      d.studentDob || null,
+      studentName,
+      studentDob,
       d.month1 || null,
       d.month2 || null,
       d.month3 || null,
       d.newToFilm ? 1 : 0,
-      d.guardianName || null,
-      d.guardianDob || null,
-      d.addressLine1 || null,
-      d.addressLine2 || null,
-      d.city || null,
-      d.county || null,
-      d.postcode || null,
-      d.email || null,
-      d.phone || null,
-      d.emergencySame ? d.guardianName || null : d.emergencyName || null,
-      d.emergencySame ? d.phone || null : d.emergencyPhone || null,
-      d.emergencySame ? "Guardian" : d.emergencyRelation || null,
-      detail(d.allergies, d.allergiesDetail),
-      detail(d.additionalNeeds, d.additionalNeedsDetail),
-      detail(d.healthIssues, d.healthIssuesDetail),
+      guardianName,
+      guardianDob,
+      addressLine1,
+      addressLine2,
+      city,
+      county,
+      postcode,
+      email,
+      phone,
+      emergencyName,
+      emergencyPhone,
+      emergencyRelation,
+      allergies,
+      additionalNeeds,
+      healthIssues,
       d.consentFilming ? 1 : 0,
       d.consentPolicy ? 1 : 0,
       planType,

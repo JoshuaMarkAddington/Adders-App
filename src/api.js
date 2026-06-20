@@ -38,4 +38,6 @@ export const api = {
   adminLogin: (payload) => req("/api/admin/login", { method: "POST", body: payload }),
   adminLogout: () => req("/api/admin/logout", { method: "POST" }),
   adminStats: () => req("/api/admin/stats"),
+  adminApplications: () => req("/api/admin/applications"),
+  adminDeleteApplication: (id) => req(`/api/admin/applications/${id}`, { method: "DELETE" }),
 };

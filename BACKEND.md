@@ -57,18 +57,51 @@ no separate server to host.
 The password is only ever stored as a salted PBKDF2-SHA256 hash — never in plain
 text. Reach the owner area from the left rail → **Admin dashboard**.
 
-## Sending real verification codes
+## Sending real verification codes (SMTP2GO)
 
-Until an email/SMS provider is connected, codes are shown on screen so you can
-test the flow. To send real codes by **email**, set two secrets in the Pages
-project and the code in `functions/_lib/otp.js` will use them automatically:
+Codes are emailed via the **SMTP2GO HTTP API**. Set two secrets in the Pages
+project and `functions/_lib/otp.js` uses them automatically:
 
 ```bash
-npx wrangler pages secret put RESEND_API_KEY
-npx wrangler pages secret put MAIL_FROM      # e.g. "Adders <hello@yourdomain>"
+npx wrangler pages secret put SMTP2GO_API_KEY
+npx wrangler pages secret put MAIL_FROM      # a verified sender, e.g. "Adders <hello@addersentertainment.org>"
 ```
 
-(SMS via Twilio can be added in the same `deliver()` function later.)
+Until those are set, the code is shown on screen so the flow stays testable.
+(Resend is also supported as a fallback, and SMS via Twilio can be added in the
+same `deliver()` function later.)
+
+## Data protection & GDPR
+
+This app handles children's personal data, including special-category health
+information, so it is encrypted on two levels:
+
+1. **At rest by Cloudflare** — D1 databases are encrypted by the platform.
+2. **Field-level app encryption** — every sensitive field on a Film School
+   application (child name & DOB, guardian, full address, email, phone,
+   emergency contact, allergies, additional needs, health issues) is encrypted
+   with **AES-256-GCM** before it is written to the database
+   (`functions/_lib/encryption.js`). In the database these fields are
+   unreadable ciphertext.
+
+Set the encryption key as a secret (generate a fresh one and keep it safe — if
+it is lost, encrypted data cannot be recovered):
+
+```bash
+node -e 'console.log(require("crypto").randomBytes(32).toString("base64"))'
+npx wrangler pages secret put DATA_ENCRYPTION_KEY
+```
+
+Other GDPR-supporting features:
+
+- **Owner registry** — the admin dashboard lists every registered child with
+  guardian and contact details. The data is decrypted **server-side, only for a
+  signed-in admin**, and never exposed to anyone else
+  (`GET /api/admin/applications`).
+- **Right to erasure** — each record has a "Delete record (GDPR erasure)"
+  action that permanently removes it (`DELETE /api/admin/applications/:id`).
+- **Data minimisation** — login responses are constant-time and never reveal
+  whether an email exists; passwords and tokens are only ever stored hashed.
 
 ## Running it all locally
 

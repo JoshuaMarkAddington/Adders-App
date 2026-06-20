@@ -43,30 +43,49 @@ export async function checkCode(db, userId, code, purpose = "login") {
 }
 
 // Pluggable delivery. Returns true if a real provider sent the code.
-// Wire a provider here later (Resend / SendGrid for email, Twilio for SMS)
-// using secrets configured in the Cloudflare dashboard.
+// Configure secrets in the Cloudflare Pages project to enable real sending.
 async function deliver(env, destination, code) {
-  // Email via Resend (set RESEND_API_KEY + MAIL_FROM to enable).
-  if (env.RESEND_API_KEY && env.MAIL_FROM && destination && destination.includes("@")) {
+  const isEmail = destination && destination.includes("@");
+  const subject = "Your Adders Entertainment code";
+  const text = `Your verification code is ${code}. It expires in 10 minutes.\n\nIf you didn't request this, you can ignore this email.`;
+
+  // Preferred: SMTP2GO HTTP API (set SMTP2GO_API_KEY + MAIL_FROM).
+  if (env.SMTP2GO_API_KEY && env.MAIL_FROM && isEmail) {
+    try {
+      const res = await fetch("https://api.smtp2go.com/v3/email/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({
+          api_key: env.SMTP2GO_API_KEY,
+          sender: env.MAIL_FROM,
+          to: [destination],
+          subject,
+          text_body: text,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json().catch(() => ({}));
+        if (data && data.data && (data.data.succeeded === 1 || data.data.succeeded > 0)) return true;
+      }
+    } catch {
+      /* fall through */
+    }
+  }
+
+  // Alternative: Resend (set RESEND_API_KEY + MAIL_FROM).
+  if (env.RESEND_API_KEY && env.MAIL_FROM && isEmail) {
     try {
       const res = await fetch("https://api.resend.com/emails", {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${env.RESEND_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          from: env.MAIL_FROM,
-          to: destination,
-          subject: "Your Adders Entertainment code",
-          text: `Your verification code is ${code}. It expires in 10 minutes.`,
-        }),
+        headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ from: env.MAIL_FROM, to: destination, subject, text }),
       });
       if (res.ok) return true;
     } catch {
       /* fall through to dev mode */
     }
   }
+
   // No provider configured — log for local dev only.
   console.log(`[otp] code for ${destination || "user"}: ${code}`);
   return false;

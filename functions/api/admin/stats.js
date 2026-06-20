@@ -12,13 +12,6 @@ export async function onRequestGet({ request, env }) {
   const applications = await db.prepare("SELECT COUNT(*) AS n FROM applications").first();
   const children = await db.prepare("SELECT COUNT(*) AS n FROM children").first();
 
-  const recent = await db
-    .prepare(
-      `SELECT id, student_name, plan_type, plan_months, status, created_at
-       FROM applications ORDER BY created_at DESC LIMIT 20`,
-    )
-    .all();
-
   return json({
     totals: {
       members: members?.n || 0,
@@ -26,6 +19,5 @@ export async function onRequestGet({ request, env }) {
       applications: applications?.n || 0,
       children: children?.n || 0,
     },
-    recentApplications: recent.results || [],
   });
 }
