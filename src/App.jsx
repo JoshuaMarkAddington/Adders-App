@@ -3,6 +3,7 @@ import {
   Home as HomeIcon, BarChart3, LogOut, ChevronRight, Bell, Calendar,
   Lock, CreditCard, Users, Plus, Baby, Settings, ShieldAlert, Play,
 } from "lucide-react";
+import { api } from "./api.js";
 
 /* =========================================================================
    ADDERS ENTERTAINMENT — clickable prototype (v2: full-screen + immersive)
@@ -264,6 +265,28 @@ function Splash({ onDone }) {
 function Auth({ onVerify }) {
   const [mode, setMode] = useState("login");
   const isLogin = mode === "login";
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+
+  const submit = async () => {
+    setErr("");
+    setBusy(true);
+    try {
+      const res = isLogin
+        ? await api.login({ email, password })
+        : await api.signup({ name, email, phone, password });
+      onVerify(res.devCode || null);
+    } catch (e) {
+      setErr(e.message || "Something went wrong");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <Scroll style={{ justifyContent: "flex-start" }}>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", paddingTop: 54 }}>
@@ -273,17 +296,18 @@ function Auth({ onVerify }) {
         <div style={{ width: "100%", maxWidth: 380 }}>
           <div style={{ display: "flex", gap: 8, marginBottom: 22, background: C.bg2, padding: 5, borderRadius: 12 }}>
             {["login", "signup"].map((m) => (
-              <button key={m} onClick={() => setMode(m)} style={{
+              <button key={m} onClick={() => { setMode(m); setErr(""); }} style={{
                 flex: 1, padding: "10px", borderRadius: 9, border: "none", cursor: "pointer", fontWeight: 700, fontSize: 14,
                 color: mode === m ? "#070B14" : C.muted,
                 background: mode === m ? `linear-gradient(180deg, ${C.blue}, ${C.blueDeep})` : "transparent",
               }}>{m === "login" ? "Log in" : "Create account"}</button>
             ))}
           </div>
-          {!isLogin && <Field label="Full name" placeholder="Jordan Rivers" />}
-          <Field label="Email" placeholder="you@email.com" type="email" />
-          {!isLogin && <Field label="Phone number" placeholder="+44 …" type="tel" />}
-          <Field label="Password" placeholder="••••••••" type="password" />
+          {!isLogin && <Field label="Full name" placeholder="Jordan Rivers" value={name} onChange={(e) => setName(e.target.value)} />}
+          <Field label="Email" placeholder="you@email.com" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+          {!isLogin && <Field label="Phone number" placeholder="+44 …" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />}
+          <Field label="Password" placeholder="••••••••" type="password" value={password} onChange={(e) => setPassword(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") submit(); }} />
           {isLogin && (
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", margin: "2px 0 18px" }}>
               <label style={{ display: "flex", gap: 8, alignItems: "center", color: C.muted, fontSize: 13 }}>
@@ -292,7 +316,10 @@ function Auth({ onVerify }) {
               <span style={{ color: C.blue, fontSize: 13, cursor: "pointer" }}>Forgot password?</span>
             </div>
           )}
-          <Btn full color={C.blue} onClick={onVerify}>{isLogin ? "Log in" : "Create account"}</Btn>
+          {err && <div style={{ color: C.crimson, fontSize: 13, marginBottom: 12, textAlign: "center" }}>{err}</div>}
+          <Btn full color={C.blue} onClick={busy ? undefined : submit} style={{ opacity: busy ? 0.6 : 1 }}>
+            {busy ? "Please wait…" : isLogin ? "Log in" : "Create account"}
+          </Btn>
           <p style={{ color: C.muted, fontSize: 12.5, textAlign: "center", marginTop: 16, lineHeight: 1.5 }}>
             We'll send a one-time code to your email or phone to confirm it's you.
           </p>
@@ -302,13 +329,44 @@ function Auth({ onVerify }) {
   );
 }
 
-function Verify({ onDone }) {
+function Verify({ onDone, devCode, onBack }) {
   const [vals, setVals] = useState(["", "", "", "", "", ""]);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const [hint, setHint] = useState(devCode || null);
+
   const set = (i, v) => {
     if (!/^\d?$/.test(v)) return;
     const n = [...vals]; n[i] = v; setVals(n);
     if (v && i < 5) document.getElementById(`d${i + 1}`)?.focus();
   };
+
+  const confirm = async () => {
+    const code = vals.join("");
+    if (code.length !== 6) { setErr("Enter all six digits"); return; }
+    setErr("");
+    setBusy(true);
+    try {
+      const res = await api.verify(code);
+      onDone(res.user);
+    } catch (e) {
+      setErr(e.message || "That code isn't right");
+      if (e.status === 440 && onBack) onBack();
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const resend = async () => {
+    setErr("");
+    try {
+      const res = await api.resend();
+      setHint(res.devCode || null);
+    } catch (e) {
+      setErr(e.message || "Couldn't resend the code");
+    }
+  };
+
   return (
     <Center>
       <MazeMark pair={PALETTE.entertainment} size={70} style={{ animation: "spinIn 1.2s ease both" }} />
@@ -318,15 +376,26 @@ function Verify({ onDone }) {
       </p>
       <div style={{ display: "flex", gap: 9 }}>
         {vals.map((v, i) => (
-          <input key={i} id={`d${i}`} value={v} onChange={(e) => set(i, e.target.value)} inputMode="numeric" maxLength={1} style={{
+          <input key={i} id={`d${i}`} value={v} onChange={(e) => set(i, e.target.value)} inputMode="numeric" maxLength={1}
+            onKeyDown={(e) => { if (e.key === "Enter") confirm(); }} style={{
             width: 44, height: 54, textAlign: "center", fontSize: 22, fontWeight: 700, color: C.text,
             background: C.bg2, border: `1px solid ${v ? C.blue : C.line}`, borderRadius: 11, outline: "none",
           }} />
         ))}
       </div>
-      <div style={{ marginTop: 28, width: "100%", maxWidth: 320 }}><Btn full color={C.blue} onClick={onDone}>Confirm</Btn></div>
+      {err && <div style={{ color: C.crimson, fontSize: 13, marginTop: 16 }}>{err}</div>}
+      {hint && (
+        <div style={{ color: C.muted, fontSize: 12.5, marginTop: 16, textAlign: "center", maxWidth: 300, lineHeight: 1.5 }}>
+          No SMS/email provider connected yet — your code is <b style={{ color: C.text }}>{hint}</b>
+        </div>
+      )}
+      <div style={{ marginTop: 28, width: "100%", maxWidth: 320 }}>
+        <Btn full color={C.blue} onClick={busy ? undefined : confirm} style={{ opacity: busy ? 0.6 : 1 }}>
+          {busy ? "Checking…" : "Confirm"}
+        </Btn>
+      </div>
       <p style={{ color: C.muted, fontSize: 13, marginTop: 16 }}>
-        Didn't get it? <span style={{ color: C.blue, cursor: "pointer" }}>Resend code</span>
+        Didn't get it? <span style={{ color: C.blue, cursor: "pointer" }} onClick={resend}>Resend code</span>
       </p>
     </Center>
   );
@@ -597,7 +666,7 @@ function FilmSchoolDashboard({ user, onSettings }) {
       </Card>
 
       <div style={{ display: "flex", gap: 12, marginTop: 14 }}>
-        {[{ n: selected.length, l: "Modules", icon: <Lock size={15} /> }, { n: user.students, l: "Students", icon: <Users size={15} /> }, { n: "47", l: "Days left", icon: <Calendar size={15} /> }].map((s) => (
+        {[{ n: selected.length, l: "Modules", icon: <Lock size={15} /> }, { n: user.students ?? 1, l: "Students", icon: <Users size={15} /> }, { n: "47", l: "Days left", icon: <Calendar size={15} /> }].map((s) => (
           <Card key={s.l} style={{ flex: 1, textAlign: "center", padding: 16 }}>
             <div style={{ color: C.copper, display: "flex", justifyContent: "center", marginBottom: 4 }}>{s.icon}</div>
             <div style={{ fontFamily: "'Cinzel',serif", fontSize: 26, color: C.text, fontWeight: 700 }}>{s.n}</div>
@@ -668,16 +737,25 @@ function FilmSchoolSettings({ onBack }) {
 }
 
 /* ---------- ADMIN: spaces available ---------- */
-function Admin() {
+function Admin({ onLogout }) {
   const cap = MODULE_DATA.reduce((a, [, , c]) => a + c, 0);
   const taken = MODULE_DATA.reduce((a, [, t]) => a + t, 0);
   const free = cap - taken;
   const sorted = [...MODULE_DATA].sort((a, b) => (a[2] - a[1]) - (b[2] - b[1]));
+  const [stats, setStats] = useState(null);
+  useEffect(() => { api.adminStats().then(setStats).catch(() => {}); }, []);
+  const t = stats?.totals;
+  const liveTiles = [
+    [t ? String(t.members) : "—", "Members"],
+    [t ? String(t.accounts) : "—", "Accounts"],
+    [t ? String(t.applications) : "—", "Applications"],
+  ];
   return (
     <Scroll style={{ justifyContent: "flex-start" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 12, paddingTop: 26 }}>
         <BarChart3 size={22} color={C.blue} />
         <span style={{ fontFamily: "'Cinzel',serif", color: C.text, fontSize: 20, fontWeight: 700 }}>Admin · Capacity</span>
+        <button onClick={onLogout} style={{ ...chip, marginLeft: "auto" }}>Sign out</button>
       </div>
 
       <div style={{ display: "flex", gap: 12, marginTop: 16 }}>
@@ -693,7 +771,7 @@ function Admin() {
       </div>
 
       <div style={{ display: "flex", gap: 12, marginTop: 14 }}>
-        {[["142", "Members"], ["8.6k", "App opens"], ["310", "Downloads"]].map(([n, l]) => (
+        {liveTiles.map(([n, l]) => (
           <Card key={l} style={{ flex: 1, textAlign: "center", padding: 14 }}>
             <div style={{ fontFamily: "'Cinzel',serif", fontSize: 20, color: C.text, fontWeight: 700 }}>{n}</div>
             <div style={{ color: C.muted, fontSize: 11.5, marginTop: 2 }}>{l}</div>
@@ -723,6 +801,60 @@ function Admin() {
       </div>
     </Scroll>
   );
+}
+
+/* ---------- ADMIN: login gate ---------- */
+function AdminLogin({ onSuccess }) {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+
+  const submit = async () => {
+    setErr("");
+    setBusy(true);
+    try {
+      const res = await api.adminLogin({ username, password });
+      onSuccess(res.admin);
+    } catch (e) {
+      setErr(e.message || "Couldn't sign you in");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Center>
+      <MazeMark pair={PALETTE.entertainment} size={70} style={{ animation: "spinIn 1.2s ease both" }} />
+      <h2 style={{ fontFamily: "'Cinzel',serif", color: C.text, marginTop: 22, marginBottom: 6, fontSize: 22 }}>Owner sign-in</h2>
+      <p style={{ color: C.muted, fontSize: 14, textAlign: "center", maxWidth: 300, marginBottom: 22 }}>
+        This area is for the Adders team only.
+      </p>
+      <div style={{ width: "100%", maxWidth: 340 }}>
+        <Field label="Username" placeholder="Your name" value={username} onChange={(e) => setUsername(e.target.value)} />
+        <Field label="Password" placeholder="••••••••" type="password" value={password} onChange={(e) => setPassword(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") submit(); }} />
+        {err && <div style={{ color: C.crimson, fontSize: 13, marginBottom: 12, textAlign: "center" }}>{err}</div>}
+        <Btn full color={C.blue} onClick={busy ? undefined : submit} style={{ opacity: busy ? 0.6 : 1 }}>
+          {busy ? "Please wait…" : "Sign in"}
+        </Btn>
+      </div>
+    </Center>
+  );
+}
+
+function AdminGate() {
+  const [state, setState] = useState("checking"); // checking | out | in
+  useEffect(() => {
+    api.adminMe()
+      .then((r) => setState(r.admin ? "in" : "out"))
+      .catch(() => setState("out"));
+  }, []);
+  const signOut = async () => { try { await api.adminLogout(); } catch {} setState("out"); };
+
+  if (state === "checking") return <Center><MazeMark pair={PALETTE.entertainment} size={64} className="mz-idle" /></Center>;
+  if (state === "out") return <AdminLogin onSuccess={() => setState("in")} />;
+  return <Admin onLogout={signOut} />;
 }
 
 /* =====================================================================
@@ -764,7 +896,7 @@ const FSTEPS = [
   "allergies","additionalNeeds","healthIssues","consents","policy","payment","done",
 ];
 
-function FilmSchoolForm({ onBack, onDone }) {
+function FilmSchoolForm({ onBack, onDone, onApplied }) {
   const [idx, setIdx] = useState(0);
   const [dir, setDir] = useState("fwd");
   const [ak, setAk] = useState(0);
@@ -804,11 +936,15 @@ function FilmSchoolForm({ onBack, onDone }) {
   const next = () => { if(!canGo()) return; setDir("fwd"); setAk(k=>k+1); setIdx(i=>Math.min(i+1,total-1)); };
   const prev = () => { setDir("bk"); setAk(k=>k+1); setIdx(i=>Math.max(i-1,0)); };
 
-  // mock Stripe: show processing overlay, then advance to done
+  // Save the application (payments are wired in later). Show the processing
+  // overlay while it saves, then advance to the confirmation step.
   const handlePay = () => {
     if(!canGo()) return;
     setPaying(true);
-    setTimeout(() => { setPaying(false); setDir("fwd"); setAk(k=>k+1); setIdx(i=>Math.min(i+1,total-1)); }, 2200);
+    api.apply(d)
+      .then((res) => { if (res && res.user && onApplied) onApplied(res.user); })
+      .catch(() => {})
+      .finally(() => { setPaying(false); setDir("fwd"); setAk(k=>k+1); setIdx(i=>Math.min(i+1,total-1)); });
   };
 
   const btnLabel = step==="intro" ? "Begin application"
@@ -1514,13 +1650,16 @@ const browserBar = { width: "100%", display: "flex", alignItems: "center", justi
 /* ===================== APP SHELL ===================== */
 function getInitialScreen() {
   const params = new URLSearchParams(window.location.search);
-  return params.get("signup") === "1" ? "fs-form" : "library";
+  return params.get("signup") === "1" ? "fs-form" : "splash";
 }
 
 export default function App() {
-  const [screen, setScreen] = useState(getInitialScreen); // boots straight to the library, or the sign-up form if linked directly
+  const [screen, setScreen] = useState(getInitialScreen); // splash, or the sign-up form if linked directly
   const [trans, setTrans] = useState(null);
-  const [user, setUser] = useState({ name: "Jordan Rivers", member: true, plan: "Standard", students: 3 });
+  const [user, setUser] = useState(null);
+  const [devCode, setDevCode] = useState(null);
+  const userRef = useRef(user);
+  userRef.current = user;
 
   useEffect(() => {
     const link = document.createElement("link");
@@ -1529,10 +1668,21 @@ export default function App() {
     document.head.appendChild(link);
   }, []);
 
+  // Restore an existing session on load ("keep me logged in").
+  useEffect(() => {
+    api.me().then((r) => { if (r && r.user) setUser(r.user); }).catch(() => {});
+  }, []);
+
+  const logout = async () => {
+    try { await api.logout(); } catch {}
+    setUser(null);
+    setScreen("auth");
+  };
+
   const goSub = (key) => {
     if (key === "library" || key === "admin") { setScreen(key); return; }
     const s = SUBS[key];
-    const target = key === "filmschool" ? (user.member ? "fs-dash" : "fs-join") : key;
+    const target = key === "filmschool" ? (user && user.member ? "fs-dash" : "fs-join") : key;
     setTrans({ pair: s.pair, color: s.color, title: s.title, target });
   };
 
@@ -1541,17 +1691,18 @@ export default function App() {
 
   const render = () => {
     switch (screen) {
-      case "splash": return <Splash onDone={() => setScreen("auth")} />;
-      case "auth": return <Auth onVerify={() => setScreen("verify")} />;
-      case "verify": return <Verify onDone={() => setScreen("library")} />;
-      case "library": return <Home user={user} onOpen={goSub} />;
+      case "splash": return <Splash onDone={() => setScreen(userRef.current ? "library" : "auth")} />;
+      case "auth": return <Auth onVerify={(code) => { setDevCode(code); setScreen("verify"); }} />;
+      case "verify": return <Verify devCode={devCode} onBack={() => setScreen("auth")}
+        onDone={(u) => { if (u) setUser(u); setScreen("library"); }} />;
+      case "library": return user ? <Home user={user} onOpen={goSub} /> : <Auth onVerify={(code) => { setDevCode(code); setScreen("verify"); }} />;
       case "pictures": return <PicturesBrowser />;
       case "cinemas": return <Cinemas />;
       case "fs-join": return <FilmSchoolJoin onStart={() => setScreen("fs-form")} />;
-      case "fs-form": return <FilmSchoolForm onBack={() => setScreen("fs-join")} onDone={() => { setUser(u => ({ ...u, member: true })); setScreen("fs-dash"); }} />;
-      case "fs-dash": return <FilmSchoolDashboard user={user} onSettings={() => setScreen("fs-settings")} />;
+      case "fs-form": return <FilmSchoolForm onBack={() => setScreen("fs-join")} onApplied={(u) => setUser(u)} onDone={() => setScreen(userRef.current ? "fs-dash" : "auth")} />;
+      case "fs-dash": return user ? <FilmSchoolDashboard user={user} onSettings={() => setScreen("fs-settings")} /> : <Auth onVerify={(code) => { setDevCode(code); setScreen("verify"); }} />;
       case "fs-settings": return <FilmSchoolSettings onBack={() => setScreen("fs-dash")} />;
-      case "admin": return <Admin />;
+      case "admin": return <AdminGate />;
       default: return null;
     }
   };
@@ -1587,7 +1738,7 @@ export default function App() {
       {!noNav && (
         <Rail active={railActive} onNav={goSub}
           onIntro={() => setScreen("splash")}
-          onLogout={() => setScreen("auth")} />
+          onLogout={logout} />
       )}
 
       <main style={{ position: "absolute", inset: 0, left: noNav ? 0 : 76, transition: "left .2s ease" }}>
