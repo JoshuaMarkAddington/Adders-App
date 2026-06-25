@@ -32,6 +32,11 @@ export const api = {
   account: () => req("/api/account"),
   addChild: (payload) => req("/api/account/children", { method: "POST", body: payload }),
   apply: (d) => req("/api/filmschool/apply", { method: "POST", body: d }),
+  // Start payment: returns { mode:"stripe", url } to redirect to Stripe Checkout,
+  // or { mode:"test", user } when Stripe isn't configured yet.
+  checkout: (d) => req("/api/filmschool/checkout", { method: "POST", body: d }),
+  // Confirm a Stripe Checkout session after returning from the hosted page.
+  confirmCheckout: (sessionId) => req("/api/filmschool/confirm", { method: "POST", body: { sessionId } }),
 
   // --- admin ---
   adminMe: () => req("/api/admin/me"),

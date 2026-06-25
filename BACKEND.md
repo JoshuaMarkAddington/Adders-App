@@ -12,13 +12,18 @@ no separate server to host.
   10-minute expiry (`functions/_lib/otp.js`)
 - **Film School applications** — the whole form is saved to the database
   (`functions/api/filmschool/apply.js`)
+- **Membership payments via Stripe** — the application form checks out through
+  Stripe Checkout (`functions/api/filmschool/checkout.js`, `confirm.js`,
+  `webhook.js`)
 - **Children on an account** (`functions/api/account/*`)
 - **Admin / owner area** — separate login + a dashboard fed by real figures
   (`functions/api/admin/*`)
 
-> **Payments are intentionally not wired yet.** Applications are saved with the
-> status `awaiting_payment` and access is granted in the meantime. Stripe slots
-> in next.
+> **Until you add a Stripe key, payments fall back gracefully.** If
+> `STRIPE_SECRET_KEY` is not set, `/checkout` saves the application as
+> `awaiting_payment` and grants access immediately so the app stays fully
+> usable. The moment the key is set, the same button sends customers to Stripe
+> Checkout instead.
 
 ## One-time setup
 
@@ -70,6 +75,43 @@ npx wrangler pages secret put MAIL_FROM      # a verified sender, e.g. "Adders <
 Until those are set, the code is shown on screen so the flow stays testable.
 (Resend is also supported as a fallback, and SMS via Twilio can be added in the
 same `deliver()` function later.)
+
+## Taking membership payments (Stripe)
+
+Memberships check out through **Stripe Checkout** (the hosted, PCI-compliant
+payment page — no card details ever touch this app).
+
+The flow:
+
+1. The application form posts to **`POST /api/filmschool/checkout`**. The server
+   validates the plan against its own price table (the client's amount is never
+   trusted), saves the application as `awaiting_payment`, and creates a Stripe
+   Checkout session. The app redirects the customer to Stripe.
+2. On success Stripe returns the customer to `/?paid=1&session_id=…`. The app
+   calls **`POST /api/filmschool/confirm`**, which verifies the session is
+   `paid` directly with Stripe, marks the application `active`, and grants
+   membership.
+3. **`POST /api/filmschool/webhook`** is a backup: on `checkout.session.completed`
+   it does the same activation, so payment is recorded even if the customer
+   never returns to the success page.
+
+Set the secret key (and, once you add the webhook endpoint in the Stripe
+dashboard, the webhook signing secret):
+
+```bash
+npx wrangler pages secret put STRIPE_SECRET_KEY       # sk_live_… (or sk_test_…)
+npx wrangler pages secret put STRIPE_WEBHOOK_SECRET    # whsec_… (from the webhook endpoint)
+```
+
+In the Stripe dashboard, add a webhook endpoint pointing at
+`https://YOUR-SITE/api/filmschool/webhook` and subscribe it to
+`checkout.session.completed`.
+
+**Until `STRIPE_SECRET_KEY` is set**, `/checkout` falls back to saving the
+application and granting access immediately, so the app keeps working end to end
+while you finish Stripe setup. Prices live server-side in
+`functions/api/filmschool/checkout.js` — keep them in step with the `PRICES`
+table in `src/App.jsx`.
 
 ## Data protection & GDPR
 

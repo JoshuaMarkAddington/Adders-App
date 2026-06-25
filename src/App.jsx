@@ -184,6 +184,55 @@ const Scroll = ({ children, style, max = 720 }) => (
   </div>
 );
 
+/* ---------- Trustpilot review widget ----------
+   The bootstrap loader is in index.html; it renders any .trustpilot-widget on
+   the page. In this SPA the widget mounts after that script, so we ask
+   Trustpilot to render this element once the loader is available. */
+function Trustpilot() {
+  const ref = useRef(null);
+  useEffect(() => {
+    let tries = 0;
+    const render = () => {
+      if (window.Trustpilot && ref.current) {
+        window.Trustpilot.loadFromElement(ref.current, true);
+      } else if (tries++ < 25) {
+        setTimeout(render, 300);
+      }
+    };
+    render();
+  }, []);
+  return (
+    <div
+      ref={ref}
+      className="trustpilot-widget"
+      data-locale="en-US"
+      data-template-id="56278e9abfbbba0bdcd568bc"
+      data-businessunit-id="6a3cfe243f0616413d19362d"
+      data-style-height="52px"
+      data-style-width="100%"
+      data-token="0848c60b-b0c7-47eb-a330-e9c647859b8c"
+    >
+      <a href="https://www.trustpilot.com/review/addersentertainment.org" target="_blank" rel="noopener">Trustpilot</a>
+    </div>
+  );
+}
+
+/* ---------- shared site footer: reviews + secure-payment badge ---------- */
+function SiteFooter() {
+  return (
+    <div style={{ marginTop: 40, paddingTop: 24, borderTop: `1px solid ${C.line}`,
+      display: "flex", flexDirection: "column", alignItems: "center", gap: 14 }}>
+      <div style={{ width: "100%", maxWidth: 360 }}><Trustpilot /></div>
+      <a href="https://stripe.com" target="_blank" rel="noopener" aria-label="Powered by Stripe"
+        style={{ display: "inline-block", opacity: 0.75 }}>
+        <img src="/powered-by-stripe.png" alt="Powered by Stripe"
+          style={{ width: 200, height: "auto", display: "block" }} />
+      </a>
+      <div style={{ color: C.muted, fontSize: 11.5 }}>© {new Date().getFullYear()} Adders Film School. All rights reserved.</div>
+    </div>
+  );
+}
+
 /* ===================== LEFT NAV RAIL ===================== */
 function Rail({ active, onNav, onIntro, onLogout }) {
   const items = [
@@ -553,6 +602,8 @@ function Home({ user, onOpen }) {
         </div>
         <span style={{ color: C.gold, fontWeight: 700, fontSize: 13, whiteSpace: "nowrap", display: "inline-flex", gap: 6, alignItems: "center" }}>Services <ChevronRight size={15} /></span>
       </Card>
+
+      <SiteFooter />
     </Scroll>
   );
 }
@@ -683,6 +734,8 @@ function FilmSchoolJoin({ onStart }) {
       <div style={{ marginTop: 18 }}>
         <Btn full color={C.copper} onClick={onStart}>Begin application →</Btn>
       </div>
+
+      <SiteFooter />
     </Scroll>
   );
 }
@@ -750,6 +803,55 @@ function FilmSchoolDashboard({ user, onSettings }) {
         ))}
       </div>
     </Scroll>
+  );
+}
+
+/* ---------- return from Stripe Checkout: confirm payment ---------- */
+function FilmSchoolPaid({ sessionId, onUser, onDone }) {
+  const [state, setState] = useState("verifying"); // verifying | ok | pending | error
+  const [msg, setMsg] = useState("");
+
+  useEffect(() => {
+    // Tidy the URL so a refresh doesn't re-trigger confirmation.
+    try { window.history.replaceState({}, "", "/"); } catch {}
+    if (!sessionId) { setState("error"); setMsg("Missing payment reference."); return; }
+    api.confirmCheckout(sessionId)
+      .then((res) => {
+        if (res && res.paid) { if (res.user && onUser) onUser(res.user); setState("ok"); }
+        else { setState("pending"); }
+      })
+      .catch((e) => { setState("error"); setMsg(e.message || "We couldn't confirm your payment."); });
+  }, [sessionId]);
+
+  if (state === "verifying") {
+    return (
+      <Center>
+        <MazeMark pair={[C.gold, C.goldDeep]} size={92} style={{ animation: "spinR 1s linear infinite", transformOrigin: "50% 50%" }} />
+        <div style={{ marginTop: 24, fontFamily: "'Cinzel',serif", fontSize: 18, color: C.gold, fontWeight: 700 }}>Confirming your payment…</div>
+      </Center>
+    );
+  }
+
+  const ok = state === "ok";
+  const accent = ok ? "#5BC08A" : state === "pending" ? C.gold : "#ef6868";
+  const title = ok ? "You're in!" : state === "pending" ? "Payment processing" : "Couldn't confirm payment";
+  const body = ok
+    ? "Your membership is confirmed and your booking confirmation is on its way by email."
+    : state === "pending"
+      ? "Your payment is still being processed. Your membership will activate automatically once it clears — no need to pay again."
+      : (msg || "Something went wrong confirming your payment.");
+
+  return (
+    <Center>
+      <div style={{ fontSize: 56, marginBottom: 14 }}>{ok ? "🎬" : state === "pending" ? "⏳" : "⚠️"}</div>
+      <h2 style={{ fontFamily: "'Cinzel',serif", fontSize: 26, color: C.text, margin: 0, textAlign: "center" }}>{title}</h2>
+      <p style={{ color: C.muted, fontSize: 14.5, lineHeight: 1.7, marginTop: 12, maxWidth: 420, textAlign: "center" }}>{body}</p>
+      <div style={{ marginTop: 24 }}>
+        <Btn color={ok ? C.copper : accent} onClick={onDone}>
+          {ok ? "Go to my dashboard →" : "Back to Film School"}
+        </Btn>
+      </div>
+    </Center>
   );
 }
 
@@ -1050,10 +1152,15 @@ function FilmSchoolForm({ onBack, onDone, onApplied }) {
   const handlePay = () => {
     if(!canGo()) return;
     setPaying(true);
-    api.apply(d)
-      .then((res) => { if (res && res.user && onApplied) onApplied(res.user); })
-      .catch(() => {})
-      .finally(() => { setPaying(false); setDir("fwd"); setAk(k=>k+1); setIdx(i=>Math.min(i+1,total-1)); });
+    api.checkout(d)
+      .then((res) => {
+        // Stripe is configured: hand off to the secure hosted checkout page.
+        if (res && res.mode === "stripe" && res.url) { window.location.href = res.url; return; }
+        // Fallback (no Stripe key yet): membership granted server-side.
+        if (res && res.user && onApplied) onApplied(res.user);
+        setPaying(false); setDir("fwd"); setAk(k=>k+1); setIdx(i=>Math.min(i+1,total-1));
+      })
+      .catch(() => { setPaying(false); });
   };
 
   const btnLabel = step==="intro" ? "Begin application"
@@ -1777,11 +1884,18 @@ const browserBar = { width: "100%", display: "flex", alignItems: "center", justi
 /* ===================== APP SHELL ===================== */
 function getInitialScreen() {
   const params = new URLSearchParams(window.location.search);
+  if (params.get("paid") === "1") return "fs-paid";        // returning from Stripe Checkout
+  if (params.get("canceled") === "1") return "fs-join";    // checkout abandoned
   return params.get("signup") === "1" ? "fs-form" : "splash";
+}
+
+function getPaidSession() {
+  return new URLSearchParams(window.location.search).get("session_id");
 }
 
 export default function App() {
   const [screen, setScreen] = useState(getInitialScreen); // splash, or the sign-up form if linked directly
+  const [paidSession] = useState(getPaidSession); // Stripe Checkout session id on return
   const [trans, setTrans] = useState(null);
   const [user, setUser] = useState(null);
   const [devCode, setDevCode] = useState(null);
@@ -1798,6 +1912,13 @@ export default function App() {
   // Restore an existing session on load ("keep me logged in").
   useEffect(() => {
     api.me().then((r) => { if (r && r.user) setUser(r.user); }).catch(() => {});
+  }, []);
+
+  // Tidy the URL after an abandoned Stripe Checkout so a refresh is clean.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("canceled") === "1") {
+      try { window.history.replaceState({}, "", "/"); } catch {}
+    }
   }, []);
 
   const logout = async () => {
@@ -1828,6 +1949,8 @@ export default function App() {
       case "cinemas": return <Cinemas />;
       case "fs-join": return <FilmSchoolJoin onStart={() => setScreen("fs-form")} />;
       case "fs-form": return <FilmSchoolForm onBack={() => setScreen("fs-join")} onApplied={(u) => setUser(u)} onDone={() => setScreen(userRef.current ? "fs-dash" : "auth")} />;
+      case "fs-paid": return <FilmSchoolPaid sessionId={paidSession} onUser={(u) => setUser(u)}
+        onDone={() => setScreen(userRef.current ? "fs-dash" : "library")} />;
       case "fs-dash": return user ? <FilmSchoolDashboard user={user} onSettings={() => setScreen("fs-settings")} /> : <Auth onVerify={(code) => { setDevCode(code); setScreen("verify"); }} />;
       case "fs-settings": return <FilmSchoolSettings onBack={() => setScreen("fs-dash")} />;
       case "admin": return <AdminGate />;
