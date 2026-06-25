@@ -611,6 +611,46 @@ function Cinemas() {
   );
 }
 
+/* ---------- opening announcement (mirrors the Film School website) ----------
+   Memberships are open to ages 13–17 for the 1st September Milton Keynes
+   opening; adult classes follow soon. */
+const TERM_START = "2026-09-01";
+const ELIGIBLE_MIN = 13;
+const ELIGIBLE_MAX = 17;
+
+// Age in whole years on a given date (defaults to the term start date).
+function ageOn(dob, onDate = TERM_START) {
+  if (!dob) return null;
+  const b = new Date(dob);
+  const ref = new Date(onDate);
+  if (isNaN(b.getTime())) return null;
+  let age = ref.getFullYear() - b.getFullYear();
+  const m = ref.getMonth() - b.getMonth();
+  if (m < 0 || (m === 0 && ref.getDate() < b.getDate())) age -= 1;
+  return age;
+}
+const eligibleAge = (dob) => {
+  const a = ageOn(dob);
+  return a !== null && a >= ELIGIBLE_MIN && a <= ELIGIBLE_MAX;
+};
+
+function OpeningBanner() {
+  return (
+    <div style={{
+      width: "100%", maxWidth: 420, margin: "0 auto 6px", boxSizing: "border-box",
+      background: `linear-gradient(135deg, ${C.copper}22, ${C.copperDeep}14)`,
+      border: `1px solid ${C.copper}`, borderRadius: 14, padding: "14px 18px",
+      boxShadow: `0 8px 28px ${C.copper}22`,
+    }}>
+      <div style={{ color: C.copper, fontWeight: 700, fontSize: 15 }}>🎬 Now opening in Milton Keynes — 1st September</div>
+      <div style={{ color: C.text, fontSize: 13, marginTop: 6, lineHeight: 1.55 }}>
+        Classes begin on the 1st of September. <b>Ages 13–17</b> — available to buy{" "}
+        <b style={{ color: C.copper }}>now</b>. Adult classes available to buy <b>soon</b>.
+      </div>
+    </div>
+  );
+}
+
 function FilmSchoolJoin({ onStart }) {
   const plans = [
     { name: "Standard", color: C.copper, perks: ["All modules", "Professional equipment", "DaVinci Resolve", "WriterDuet", "4K HDR films", "Showreel after 24 months"], missing: ["Framed posters", "Merch pack", "T-shirt", "TOTUM card"] },
@@ -620,8 +660,9 @@ function FilmSchoolJoin({ onStart }) {
     <Scroll style={{ justifyContent: "flex-start" }}>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", paddingTop: 30 }}>
         <MazeMark pair={PALETTE.filmschool} size={84} className="mz-idle" />
-        <div style={{ marginTop: 14, marginBottom: 8 }}><Wordmark name="ADDERS" sub="FILM SCHOOL" subColor={C.copper} size={22} /></div>
-        <p style={{ color: C.muted, textAlign: "center", maxWidth: 360, fontSize: 14, lineHeight: 1.6, marginBottom: 22 }}>
+        <div style={{ marginTop: 14, marginBottom: 16 }}><Wordmark name="ADDERS" sub="FILM SCHOOL" subColor={C.copper} size={22} /></div>
+        <OpeningBanner />
+        <p style={{ color: C.muted, textAlign: "center", maxWidth: 360, fontSize: 14, lineHeight: 1.6, margin: "18px 0 22px" }}>
           You're not a member yet. Pick a plan, choose 2–3 modules per 3-month cycle, and start your journey.
         </p>
       </div>
@@ -980,7 +1021,7 @@ function FilmSchoolForm({ onBack, onDone, onApplied }) {
     switch(step){
       case "intro": return true;
       case "studentName": return d.studentName.trim().length > 1;
-      case "studentDob": return !!d.studentDob;
+      case "studentDob": return eligibleAge(d.studentDob);
       case "month1": return !!d.month1;
       case "month2": return !!d.month2;
       case "month3": return !!d.month3;
@@ -1117,12 +1158,30 @@ function FormContent({ step, d, set, firstName, onDone }) {
       </div>
     );
 
-    case "studentDob": return (
-      <div style={{ width:"100%", maxWidth:460 }}>
-        <Q sub="We use this to confirm eligibility for the programme.">When was {firstName} born?</Q>
-        <FInput type="date" value={d.studentDob} onChange={e=>set("studentDob",e.target.value)} />
-      </div>
-    );
+    case "studentDob": {
+      const age = ageOn(d.studentDob);
+      const tooYoung = age !== null && age < ELIGIBLE_MIN;
+      const tooOld = age !== null && age > ELIGIBLE_MAX;
+      return (
+        <div style={{ width:"100%", maxWidth:460 }}>
+          <Q sub="Memberships are open to ages 13–17 for our 1st September opening in Milton Keynes. Adult classes open soon.">When was {firstName} born?</Q>
+          <FInput type="date" value={d.studentDob} onChange={e=>set("studentDob",e.target.value)} />
+          {tooOld && (
+            <div style={{ background:`${C.blue}14`, border:`1px solid ${C.blue}44`, borderRadius:12,
+              padding:"13px 16px", marginTop:16, color:C.blue, fontSize:13, lineHeight:1.55 }}>
+              🎬 Right now memberships are available for <b>ages 13–17</b>. Adult classes (18+) are opening soon — email{" "}
+              <b style={{color:C.text}}>office@addersentertainment.org</b> and we'll let you know the moment adult enrolment opens.
+            </div>
+          )}
+          {tooYoung && (
+            <div style={{ background:`${C.copper}12`, border:`1px solid ${C.copper}44`, borderRadius:12,
+              padding:"13px 16px", marginTop:16, color:C.copper, fontSize:13, lineHeight:1.55 }}>
+              Our programme is open to ages 13–17. Please double-check the date of birth.
+            </div>
+          )}
+        </div>
+      );
+    }
 
     case "month1": return (
       <div style={{ width:"100%", maxWidth:520 }}>
