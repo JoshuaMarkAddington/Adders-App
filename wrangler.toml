@@ -2,9 +2,7 @@ name = "adders-entertainment-app"
 pages_build_output_dir = "./dist"
 
 # Cloudflare D1 database binding (available to Pages Functions as env.DB).
-# Create it once with:  npx wrangler d1 create adders-db
-# then paste the printed database_id below.
 [[d1_databases]]
 binding = "DB"
-database_name = "adders-db"
-database_id = "REPLACE_WITH_YOUR_DATABASE_ID"
+database_name = "filmschool"
+database_id = "0add03d2-c595-4565-872b-c1522cb75efa"

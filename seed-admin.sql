@@ -1,6 +1,6 @@
 -- =========================================================================
 --  Seed the owner admin account.
---  Apply with: npx wrangler d1 execute adders-db --file=./seed-admin.sql
+--  Apply with: npx wrangler d1 execute filmschool --file=./seed-admin.sql
 --  (add --remote for the deployed database)
 --
 --  Login username: Joshua Addington

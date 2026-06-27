@@ -1,6 +1,7 @@
 import { json, error, readJson, parseCookies, cookieHeader } from "../../_lib/http.js";
 import { checkCode } from "../../_lib/otp.js";
 import { createUserSession, publicUser } from "../../_lib/session.js";
+import { linkMembershipByEmail } from "../../_lib/membership.js";
 
 const PENDING_COOKIE = "ae_pending";
 
@@ -25,7 +26,10 @@ export async function onRequestPost({ request, env }) {
   }
 
   await db.prepare("UPDATE users SET email_verified = 1, updated_at = datetime('now') WHERE id = ?").bind(userId).run();
-  const user = await db.prepare("SELECT * FROM users WHERE id = ?").bind(userId).first();
+  let user = await db.prepare("SELECT * FROM users WHERE id = ?").bind(userId).first();
+
+  // Connect this account to any website sign-up made with the same email.
+  user = await linkMembershipByEmail(db, user);
 
   const sessionCookie = await createUserSession(db, userId);
   const headers = new Headers();

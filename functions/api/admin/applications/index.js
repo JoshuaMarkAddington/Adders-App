@@ -1,10 +1,10 @@
 import { json, error } from "../../../_lib/http.js";
 import { getSessionAdmin, isOwner } from "../../../_lib/session.js";
-import { decryptField } from "../../../_lib/encryption.js";
 
 // GET /api/admin/applications  — full Film School registry.
-// Every child + contact record is decrypted here, server-side, ONLY for the
-// owner account. The data is never sent to anyone else.
+//
+// Sign-ups are created by the website and stored in the shared `applications`
+// table. The registry is returned only to the owner account.
 export async function onRequestGet({ request, env }) {
   const db = env.DB;
   const admin = await getSessionAdmin(db, request);
@@ -13,42 +13,41 @@ export async function onRequestGet({ request, env }) {
 
   const rows = (await db
     .prepare(
-      `SELECT id, student_name, student_dob, module1, module2, module3, new_to_film,
+      `SELECT id, student_name, student_dob, month1, month2, month3, new_to_film,
               guardian_name, guardian_dob, address_line1, address_line2, city, county, postcode,
               email, phone, emergency_name, emergency_phone, emergency_relation,
-              allergies, additional_needs, health_issues, plan_type, plan_months, status, created_at
+              allergies, allergies_detail, additional_needs, additional_needs_detail,
+              health_issues, health_issues_detail, plan_type, plan_months, status, created_at
        FROM applications ORDER BY created_at DESC`,
     )
     .all()).results || [];
 
-  const records = await Promise.all(
-    rows.map(async (r) => {
-      const D = (v) => decryptField(env, v, r.id); // bound to this record (AAD)
-      return {
-        id: r.id,
-        studentName: await D(r.student_name),
-        studentDob: await D(r.student_dob),
-        modules: [r.module1, r.module2, r.module3].filter(Boolean),
-        newToFilm: !!r.new_to_film,
-        guardianName: await D(r.guardian_name),
-        guardianDob: await D(r.guardian_dob),
-        address: [await D(r.address_line1), await D(r.address_line2), await D(r.city), await D(r.county), await D(r.postcode)]
-          .filter(Boolean)
-          .join(", "),
-        email: await D(r.email),
-        phone: await D(r.phone),
-        emergencyName: await D(r.emergency_name),
-        emergencyPhone: await D(r.emergency_phone),
-        emergencyRelation: await D(r.emergency_relation),
-        allergies: await D(r.allergies),
-        additionalNeeds: await D(r.additional_needs),
-        healthIssues: await D(r.health_issues),
-        plan: r.plan_type ? `${r.plan_type} · ${r.plan_months}m` : null,
-        status: r.status,
-        createdAt: r.created_at,
-      };
-    }),
-  );
+  // Each "has X?" flag is paired with a free-text detail column.
+  const detail = (flag, text) => (flag ? (text || "yes") : "none");
+
+  const records = rows.map((r) => ({
+    id: r.id,
+    studentName: r.student_name,
+    studentDob: r.student_dob,
+    modules: [r.month1, r.month2, r.month3].filter(Boolean),
+    newToFilm: !!r.new_to_film,
+    guardianName: r.guardian_name,
+    guardianDob: r.guardian_dob,
+    address: [r.address_line1, r.address_line2, r.city, r.county, r.postcode]
+      .filter(Boolean)
+      .join(", "),
+    email: r.email,
+    phone: r.phone,
+    emergencyName: r.emergency_name,
+    emergencyPhone: r.emergency_phone,
+    emergencyRelation: r.emergency_relation,
+    allergies: detail(r.allergies, r.allergies_detail),
+    additionalNeeds: detail(r.additional_needs, r.additional_needs_detail),
+    healthIssues: detail(r.health_issues, r.health_issues_detail),
+    plan: r.plan_type ? `${r.plan_type} · ${r.plan_months}m` : null,
+    status: r.status,
+    createdAt: r.created_at,
+  }));
 
   return json({ applications: records });
 }

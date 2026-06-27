@@ -12,24 +12,26 @@ no separate server to host.
   10-minute expiry (`functions/_lib/otp.js`)
 - **Film School applications** — the whole form is saved to the database
   (`functions/api/filmschool/apply.js`)
+- **Website ⇄ app account linking** — the app shares one database with the
+  Adders website. People sign up (and pay) on the website, which stores each
+  sign-up in the `applications` table keyed by **email**. When that person signs
+  in to the app with the same email, their sign-up is linked to their account
+  and membership is granted (`functions/_lib/membership.js`).
 - **Children on an account** (`functions/api/account/*`)
 - **Admin / owner area** — separate login + a dashboard fed by real figures
   (`functions/api/admin/*`)
 
-> **Payments are intentionally not wired yet.** Applications are saved with the
-> status `awaiting_payment` and access is granted in the meantime. Stripe slots
-> in next.
+> **Payments live on the website.** In-app applications are saved with the
+> status `pending_payment` and access is granted in the meantime; the website's
+> Stripe flow records the payment reference on the same row.
 
 ## One-time setup
 
-1. **Create the database**
-
-   ```bash
-   npx wrangler d1 create adders-db
-   ```
-
-   Copy the printed `database_id` into `wrangler.toml` (replace
-   `REPLACE_WITH_YOUR_DATABASE_ID`).
+1. **Database** — the live D1 database is **`filmschool`**
+   (id `0add03d2-c595-4565-872b-c1522cb75efa`), already created and wired into
+   `wrangler.toml`. To start fresh on a new account instead, run
+   `npx wrangler d1 create <name>` and paste the printed `database_id` into
+   `wrangler.toml`.
 
 2. **Create the tables** (add `:remote` versions for the live database)
 
@@ -46,7 +48,7 @@ no separate server to host.
    ```
 
 3. **Bind the database in Cloudflare Pages** — in the Pages project settings,
-   add a D1 binding named `DB` pointing at `adders-db` (so the live Functions
+   add a D1 binding named `DB` pointing at `filmschool` (so the live Functions
    can reach it).
 
 ## Owner admin login
@@ -74,36 +76,28 @@ same `deliver()` function later.)
 ## Data protection & GDPR
 
 This app handles children's personal data, including special-category health
-information, so it is protected with defence in depth
-(`functions/_lib/encryption.js`):
+information, so it is protected on several levels:
 
 1. **At rest by Cloudflare** — D1 databases are encrypted by the platform.
-2. **AES-256-GCM field encryption** — every sensitive field on a Film School
-   application (child name & DOB, guardian, full address, email, phone,
-   emergency contact, allergies, additional needs, health issues) is encrypted
-   before it is written. In the database these fields are unreadable ciphertext.
-3. **HKDF key derivation** — the stored secret is never the working key; an AES
-   key is derived from it with HKDF-SHA256.
-4. **Per-record binding (AAD)** — each ciphertext is tied to its own record id,
-   so it cannot be tampered with or moved to another row.
-5. **Two independent layers** — when `DATA_ENCRYPTION_KEY2` is set, data is
-   encrypted a second time under a separate key. Reading it then requires
-   **both** secrets, which should be stored separately.
+2. **Owner-only access to personal data** — the application registry is returned
+   **only to the owner account** (see below).
+3. **Hashed secrets** — passwords (PBKDF2-SHA256), session tokens and
+   verification codes (SHA-256) are only ever stored hashed, never in plain
+   text.
 
-Set both keys as secrets (generate fresh ones and keep them safe — if a key is
-lost, the data it protects cannot be recovered):
-
-```bash
-node -e 'console.log(require("crypto").randomBytes(32).toString("base64"))'
-npx wrangler pages secret put DATA_ENCRYPTION_KEY
-node -e 'console.log(require("crypto").randomBytes(32).toString("base64"))'
-npx wrangler pages secret put DATA_ENCRYPTION_KEY2
-```
+> **Note on the `applications` table.** This table is shared with the Adders
+> website, which writes sign-ups in plain text. To keep one consistent table,
+> the in-app form also writes plain text — so personal/health fields are **not**
+> field-level encrypted, only protected by Cloudflare's at-rest encryption and
+> owner-only access. If you want application fields encrypted at the field level,
+> the website code (outside this repo) has to encrypt them too, since it writes
+> to the same table. A field-encryption helper is still available in
+> `functions/_lib/encryption.js` for any new, app-only data.
 
 Other GDPR-supporting features:
 
 - **Owner-only access** — the registry that lists every registered child with
-  guardian and contact details is decrypted **server-side, only for the owner
+  guardian and contact details is returned **server-side, only for the owner
   account** (`Joshua Addington`, or whoever `OWNER_USERNAME` names). No other
   admin can ever see the personal data (`GET /api/admin/applications`).
 - **Right to erasure** — each record has a "Delete record (GDPR erasure)"

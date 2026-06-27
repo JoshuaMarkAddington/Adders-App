@@ -7,10 +7,10 @@
     "build": "vite build",
     "preview": "vite preview",
     "dev:server": "npm run build && wrangler pages dev ./dist",
-    "db:init": "wrangler d1 execute adders-db --local --file=./schema.sql",
-    "db:seed": "wrangler d1 execute adders-db --local --file=./seed-admin.sql",
-    "db:init:remote": "wrangler d1 execute adders-db --remote --file=./schema.sql",
-    "db:seed:remote": "wrangler d1 execute adders-db --remote --file=./seed-admin.sql"
+    "db:init": "wrangler d1 execute filmschool --local --file=./schema.sql",
+    "db:seed": "wrangler d1 execute filmschool --local --file=./seed-admin.sql",
+    "db:init:remote": "wrangler d1 execute filmschool --remote --file=./schema.sql",
+    "db:seed:remote": "wrangler d1 execute filmschool --remote --file=./seed-admin.sql"
   },
   "dependencies": {
     "lucide-react": "^0.383.0",
