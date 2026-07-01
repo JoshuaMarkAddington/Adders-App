@@ -59,19 +59,32 @@ no separate server to host.
 The password is only ever stored as a salted PBKDF2-SHA256 hash — never in plain
 text. Reach the owner area from the left rail → **Admin dashboard**.
 
-## Sending real verification codes (SMTP2GO)
+## Sending real verification codes (Resend)
 
-Codes are emailed via the **SMTP2GO HTTP API**. Set two secrets in the Pages
-project and `functions/_lib/otp.js` uses them automatically:
+Codes are emailed via the **Resend API** (SMTP2GO is also supported as an
+alternative — `functions/_lib/otp.js` tries SMTP2GO first, then Resend). Set two
+secrets on the `adders-app` Cloudflare Pages project and they're picked up
+automatically:
 
-```bash
-npx wrangler pages secret put SMTP2GO_API_KEY
-npx wrangler pages secret put MAIL_FROM      # a verified sender, e.g. "Adders <hello@addersentertainment.org>"
-```
+- `RESEND_API_KEY` — from Resend → API Keys
+- `MAIL_FROM` — a verified sender, e.g. `"Adders <hello@addersentertainment.org>"`
 
 Until those are set, the code is shown on screen so the flow stays testable.
-(Resend is also supported as a fallback, and SMS via Twilio can be added in the
-same `deliver()` function later.)
+
+**Option A — CLI / dashboard directly:**
+
+```bash
+npx wrangler pages secret put RESEND_API_KEY --project-name adders-app
+npx wrangler pages secret put MAIL_FROM --project-name adders-app
+```
+
+(or Cloudflare dashboard → Workers & Pages → adders-app → Settings → Variables and Secrets)
+
+**Option B — via GitHub (matches how the website's secrets are managed):**
+Add these to this repo's **Settings → Secrets and variables → Actions**:
+`CLOUDFLARE_API_TOKEN` (a token with Pages edit access), `CLOUDFLARE_ACCOUNT_ID`,
+`RESEND_API_KEY`, `MAIL_FROM`. Then run the **Sync Cloudflare secrets** workflow
+(Actions tab → Run workflow) to push them into the Pages project.
 
 ## Data protection & GDPR
 
