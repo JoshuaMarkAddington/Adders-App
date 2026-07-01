@@ -11,9 +11,10 @@ export async function onRequestGet({ request, env }) {
     .prepare("SELECT id, name, dob FROM children WHERE user_id = ? ORDER BY created_at")
     .bind(user.id)
     .all();
+  // Website sign-ups are linked by email (the website table has no user_id).
   const application = await db
-    .prepare("SELECT id, plan_type, plan_months, status, created_at FROM applications WHERE user_id = ? ORDER BY created_at DESC LIMIT 1")
-    .bind(user.id)
+    .prepare("SELECT id, plan_type, plan_months, status, created_at FROM applications WHERE lower(email) = lower(?) ORDER BY created_at DESC LIMIT 1")
+    .bind(user.email)
     .first();
 
   return json({
