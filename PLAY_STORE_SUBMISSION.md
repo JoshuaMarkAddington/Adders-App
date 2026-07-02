@@ -65,18 +65,21 @@ instead of full-screen — it still works, just looks like a browser tab.
 | Phone screenshots (min. 2) | ⬜ Take these from the running app once deployed |
 | Short description (≤80 chars) | ⬜ e.g. "Adders Entertainment Film School — memberships & applications" |
 | Full description (≤4000 chars) | ⬜ Needs your input |
-| Privacy Policy URL | ⬜ **Blocked — see below** |
+| Privacy Policy URL | ✅ `https://app.addersentertainment.org/policies.html` (see below) |
 | Category, contact email | ⬜ Needs your input |
 
-## 5. Privacy Policy (blocking)
+## 5. Privacy Policy — done
 
-Google Play **will reject the app without a live Privacy Policy URL**, and
-this app collects children's guardian/health data, so the content matters.
-I wasn't able to pull the existing policy from the Film School sign-up form —
-this environment's network policy blocks outbound requests to
-`fs.addersentertainment.org` and `app.addersentertainment.org`. Please paste
-the policy text directly here and I'll turn it into a page the app and Play
-Store listing can both link to.
+Live at **`https://app.addersentertainment.org/policies.html`** (deploys as a
+static page, `public/policies.html`) — the full "Essential Business Policies"
+document you sent (Data Protection & Privacy, Equal Opportunities, Health &
+Safety, Safeguarding, Refunds, Website T&Cs, Code of Conduct, IP & Equipment,
+Contact Details), with the Data Protection & Privacy Policy section first.
+Enter that URL as the Privacy Policy URL in Play Console.
+
+The same content is also shown in full on the in-app Film School application's
+"Policy Agreement" step (`src/App.jsx`, `POLICY_CONTENT`), replacing the old
+placeholder — applicants scroll and accept it before submitting.
 
 ## 6. Data Safety form (Play Console)
 

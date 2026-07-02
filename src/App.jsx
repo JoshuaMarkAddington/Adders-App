@@ -618,6 +618,155 @@ const TERM_START = "2026-09-01";
 const ELIGIBLE_MIN = 13;
 const ELIGIBLE_MAX = 17;
 
+// Adders Entertainment Group Ltd. — Essential Business Policies.
+// Shown in full on the Film School application's Policy Agreement step, and
+// published at /policies.html (linked as the Play Store Privacy Policy URL).
+const POLICY_CONTENT = [
+  { h: "1. Data Protection & Privacy Policy" },
+  { p: "At Adders Entertainment Group Ltd., we recognise the paramount importance of safeguarding personal information entrusted to us by our valued community, including students, staff members, and visitors. This policy serves as a testament to our unwavering commitment towards data protection while adhering strictly to relevant regulations such as the General Data Protection Regulation (GDPR) within European Union jurisdictions and the UK GDPR, or comparable standards globally. Our approach ensures the secure and transparent processing of personal data, respecting individual rights and maintaining trust within our community." },
+  { h2: "1.1 Data Collection and Usage" },
+  { p: "We collect personal data only when it is necessary for legitimate business purposes, such as student enrolment, staff employment, and service provision. This may include, but is not limited to, names, contact details (email address, phone number), payment information, and academic records. Payment information is processed securely via trusted third-party services like Stripe, ensuring that sensitive financial data is handled with the highest level of security. We commit to using collected data solely for its intended purpose, such as facilitating educational programmes, managing employment, and communicating essential information." },
+  { h2: "1.2 Data Storage and Security" },
+  { p: "All personal information is stored securely on protected servers with restricted access. We implement robust technical and organisational measures to prevent unauthorised access, disclosure, alteration, or destruction of data. Regular security audits and updates are conducted to maintain the integrity and confidentiality of our data processing systems." },
+  { h2: "1.3 Individual Rights" },
+  { p: "In accordance with GDPR and UK GDPR principles, individuals have the right to access, rectify, erase, or restrict the processing of their personal data. They also have the right to object to processing and the right to data portability. Requests regarding these rights can be made to our Data Protection Officer. We are committed to responding to such requests promptly and in compliance with legal requirements." },
+  { h2: "1.4 Data Sharing and Disclosure" },
+  { p: "We do not share or sell personal data to third parties without explicit consent, except when required by law enforcement agencies as part of investigations, or in cases where public safety is at risk. Any third-party service providers engaged by Adders Entertainment Group Ltd. are contractually obligated to adhere to strict data protection standards consistent with this policy and applicable regulations." },
+  { h2: "1.5.1 Data Collection and Purpose" },
+  { p: "We collect personal data from various sources, including our website, signup forms, and membership registrations. The types of data collected are essential for the effective operation of Adders Entertainment Group Ltd. and to provide our services, particularly for students and parents. This includes, but is not limited to:" },
+  { ul: [
+    "Student Information: Names, dates of birth, academic records, attendance, and progress.",
+    "Parent/Guardian Information: Names, contact details (email address, phone number), and billing information.",
+    "Emergency Contact Details: Names, relationship to the student, and contact numbers.",
+    "Address Information: Residential addresses for students and parents/guardians.",
+    "Website and Signup Form Data: Information voluntarily provided through our website and signup forms, which may include contact details, interests, and preferences.",
+  ] },
+  { p: "This data is collected and processed for the following legitimate purposes:" },
+  { ul: [
+    "Student Enrolment and Management: To facilitate student registration, manage courses, track attendance, and monitor academic progress.",
+    "Communication: To communicate essential information regarding courses, events, emergencies, and administrative matters to students and parents.",
+    "Safety and Welfare: To ensure the safety and well-being of students, particularly through the use of emergency contact details.",
+    "Administrative Operations: For billing, record-keeping, and internal administrative processes.",
+    "Service Improvement: To analyse trends and improve our educational programmes and services.",
+  ] },
+  { h2: "1.5.2 Lawful Basis for Processing" },
+  { p: "We process personal data based on the following lawful bases as defined by GDPR:" },
+  { ul: [
+    "Consent: Where individuals have given clear consent for us to process their personal data for a specific purpose.",
+    "Contractual Necessity: Where processing is necessary for the performance of a contract with the individual (e.g., student enrolment, membership agreement) or to take steps at the individual’s request before entering into a contract.",
+    "Legal Obligation: Where processing is necessary for compliance with a legal obligation to which Adders Entertainment Group Ltd. is subject.",
+    "Legitimate Interests: Where processing is necessary for the purposes of the legitimate interests pursued by Adders Entertainment Group Ltd. or by a third party, except where such interests are overridden by the interests or fundamental rights and freedoms of the data subject which require protection of personal data.",
+  ] },
+  { h2: "1.5.3 Data Storage, Security, and Retention" },
+  { p: "All personal data is stored securely on protected servers with restricted access. We implement robust technical and organisational measures to prevent unauthorised access, disclosure, alteration, or destruction of data. Regular security audits and updates are conducted to maintain the integrity and confidentiality of our data processing systems." },
+  { p: "Personal data will be retained only for as long as necessary to fulfil the purposes for which it was collected, including for the purposes of satisfying any legal, accounting, or reporting requirements. Upon the expiration of the retention period, personal data will be securely deleted or anonymised." },
+  { h2: "1.5.4 Individual Rights" },
+  { p: "In accordance with GDPR principles, individuals have the following rights regarding their personal data:" },
+  { ul: [
+    "Right to Access: To request a copy of the personal data we hold about them.",
+    "Right to Rectification: To request correction of inaccurate or incomplete personal data.",
+    "Right to Erasure (Right to be Forgotten): To request the deletion of their personal data under certain circumstances.",
+    "Right to Restriction of Processing: To request the restriction of processing of their personal data under certain circumstances.",
+    "Right to Data Portability: To receive their personal data in a structured, commonly used, and machine-readable format and to transmit that data to another controller.",
+    "Right to Object: To object to the processing of their personal data under certain circumstances.",
+    "Rights in Relation to Automated Decision Making and Profiling: To not be subject to a decision based solely on automated processing, including profiling, which produces legal effects concerning them or similarly significantly affects them.",
+  ] },
+  { p: "Requests regarding these rights can be made to our Data Protection Officer. We are committed to responding to such requests promptly and in compliance with legal requirements." },
+  { h2: "1.5.5 Data Sharing and Disclosure" },
+  { p: "We do not share or sell personal data to third parties without explicit consent, except when required by law enforcement agencies as part of investigations, or in cases where public safety is at risk. Any third-party service providers engaged by Adders Entertainment Group Ltd. are contractually obligated to adhere to strict data protection standards consistent with this policy and applicable regulations. This includes, but is not limited to, payment processors (e.g., Stripe) and educational platform providers." },
+  { h2: "1.5.6 Data Protection Officer" },
+  { p: "For any questions or concerns regarding this GDPR Policy or our data protection practices, please contact our Data Protection Officer (see Contact Details below)." },
+
+  { h: "2. Equal Opportunities & Diversity Policy" },
+  { p: "Adders Entertainment Group Ltd. is committed to creating an inclusive environment that ensures equal opportunities for all individuals associated with our organisation, regardless of race, ethnicity, gender identity/expression, sexual orientation, age, disability status, religion or belief (or lack thereof), socio-economic background, and any other protected characteristic defined by relevant anti-discrimination laws. We believe that a diverse workforce and student body enriches our creative output and fosters a more dynamic learning and working environment." },
+  { h2: "2.1 Promoting Inclusion & Respect" },
+  { p: "We strongly believe that diversity is a cornerstone of innovation and creativity within the film industry. Therefore, we actively work towards fostering an atmosphere where every individual feels valued for their unique skills and talents while having equal access to resources necessary for personal growth and professional development. We promote a culture of mutual respect, where discrimination, harassment, and bullying are not tolerated. Training and awareness programmes are regularly conducted to ensure all staff and students understand their roles in upholding this policy." },
+  { h2: "2.2 Recruitment and Admissions" },
+  { p: "Our recruitment and admissions processes are designed to be fair, transparent, and free from bias. Decisions are based solely on merit, qualifications, and suitability for the role or programme. We encourage applications from individuals of all backgrounds and strive to remove any barriers that might prevent talented individuals from joining our community." },
+
+  { h: "3. Health & Safety Policy" },
+  { p: "Adders Entertainment Group Ltd. is committed to ensuring a safe and healthy environment for all our students, staff members, visitors, and contractors. This policy outlines our comprehensive approach towards health and safety management within our film school’s premises and during off-site activities, including film productions." },
+  { h2: "3.1 Health & Safety Responsibilities" },
+  { p: "Every individual present at Adders Entertainment Group Ltd.’s facilities has an obligation to prioritise their own well-being as well as that of others around them by adhering strictly to all established procedures outlined herein. This shared responsibility culture promotes a proactive approach towards identifying and mitigating potential hazards, fostering a safe learning and working environment for everyone. All personnel are expected to report any health and safety concerns or incidents promptly." },
+  { h2: "3.2 Roles & Responsibilities" },
+  { p: "A Designated Health & Safety Officer (HSO) will be formally appointed by September 1st, 2026. Until that time, Joshua Mark Addington (Director) will serve as the primary point of contact for any health and safety matters within our organisation." },
+  { p: "The HSO’s responsibilities will include:" },
+  { ul: [
+    "Overseeing policy implementation across all departments.",
+    "Conducting regular audits to ensure compliance with relevant regulations and standards.",
+    "Providing comprehensive training sessions on identifying, reporting, and mitigating potential hazards.",
+    "Collaborating closely with management teams to develop effective emergency response plans tailored towards specific scenarios.",
+  ] },
+  { p: "Department Heads: Department heads must ensure staff members receive adequate health and safety awareness training upon joining Adders Entertainment Group Ltd. Additionally, regular refreshers should be conducted periodically (e.g., annually) or whenever significant changes occur within operational procedures that may impact existing protocols." },
+  { h2: "3.3 Production Safety" },
+  { p: "Given the nature of film production, specific attention is paid to on-set safety. This includes, but is not limited to, safe handling of equipment, management of trailing wires, proper use of lighting rigs, and adherence to fire safety protocols. All students and staff involved in productions must undergo specific production safety training and follow all guidelines to minimise risks. Risk assessments are mandatory for all production activities, both on and off-site." },
+
+  { h: "4. Safeguarding Policies & Procedures" },
+  { p: "Adders Entertainment Group Ltd. is committed to ensuring the safety and well-being of all our students, especially minors and vulnerable adults. This policy outlines our approach to safeguarding and provides a framework for identifying, preventing, and responding to any issues that may arise during their time with us." },
+  { h2: "4.1 Our Commitment" },
+  { p: "We take child protection and the safeguarding of vulnerable adults seriously and have implemented robust procedures to ensure every student feels safe and valued while engaging in our film school activities. All staff members are expected to adhere to these policies and undergo regular training on safeguarding practices. We foster an open and supportive environment where concerns can be raised without fear." },
+  { h2: "4.2 Reporting Mechanism" },
+  { p: "Any concerns or incidents related to safeguarding must be reported immediately to our Director, Joshua Mark Addington." },
+  { ul: ["Email: director@addersentertainment.org", "Phone: 07450344224"] },
+  { p: "All reports will be treated with utmost confidentiality and sensitivity. We encourage open communication and prompt reporting to ensure effective response and support for all involved." },
+  { h2: "4.3 Designated Safeguarding Lead (DSL)" },
+  { p: "A Designated Safeguarding Lead (DSL) will be formally appointed by September 1st, 2026, when the school opens. Until that time, Joshua Mark Addington (Director) will serve as the primary point of contact for any safeguarding concerns or incidents. An updated policy will be emailed by September 1st with the DSL’s specific contact details." },
+  { p: "The DSL’s role will include:" },
+  { ul: [
+    "Coordinating responses to reported incidents.",
+    "Providing support and guidance to students, staff, and parents/guardians.",
+    "Ensuring compliance with all relevant policies and procedures.",
+    "Maintaining records of safeguarding concerns and actions taken.",
+  ] },
+  { p: "Joshua Mark Addington will work closely with our legal team and relevant authorities to ensure appropriate action is taken in line with local laws and regulations." },
+  { h2: "4.4 Training & Awareness" },
+  { p: "All staff members, including instructors, support staff, and volunteers, must undergo comprehensive safeguarding training upon joining Adders Entertainment Group Ltd. This training covers recognising signs of abuse/neglect, responding appropriately, and understanding their duty to report any concerns immediately. Staff will receive regular updates on safeguarding practices and procedures through ongoing professional development opportunities." },
+  { h2: "4.5 Policy Review & Updates" },
+  { p: "This policy is subject to periodic review by our management team in consultation with legal advisors and industry experts. Any necessary amendments or improvements will be made promptly to ensure its effectiveness and compliance with best practices. Adders Entertainment Group Ltd. reserves the right to modify this policy at any time without prior notice." },
+
+  { h: "5. Refund Policy" },
+  { p: "At Adders Entertainment Group Ltd., we strive to provide exceptional services and ensure customer satisfaction. However, we understand that certain circumstances may arise where a refund request becomes necessary. This policy outlines our approach towards processing refunds for various scenarios." },
+  { h2: "5.1 Course Fees" },
+  { p: "For course fees, we offer a 7-day cooling-off period from the date of purchase during which full refunds can be requested. After this initial window, refunds may still be considered on a case-by-case basis depending on individual circumstances (e.g., medical emergencies), provided that a significant portion of the course has not been completed. Any decision regarding partial refunds will take into account the services already rendered and resources utilised. Please note that course materials and digital assets provided as part of our services become the property of the purchaser upon payment receipt; hence their value will be deducted from any applicable refund amount accordingly. This deduction reflects the immediate access and benefit derived from these resources." },
+  { h2: "5.2 Membership Fees" },
+  { p: "In cases where membership cancellation occurs within 7 days prior to its effective start date, a full refund will be granted. Cancellations made after this period but before the membership commencement are eligible for partial refunds subject to deduction based on time spent utilising our facilities and resources during that interim period. Once membership has commenced, refunds will generally not be issued, except in exceptional circumstances at the discretion of Adders Entertainment Group Ltd." },
+
+  { h: "6. Website Terms & Conditions" },
+  { p: "Welcome to Adders Entertainment Group Ltd.’s official website! By accessing or utilising this site, you agree to comply with these terms and conditions outlined herein. Please read them carefully before proceeding further. These terms govern your use of our website and all services provided through it." },
+  { h2: "6.1 Website Usage" },
+  { p: "This website is intended for informational purposes only. While we strive to maintain accurate content, we do not guarantee the completeness, timeliness, or reliability of any information provided. Users should conduct their own due diligence when making decisions based on data sourced from our platform. We reserve the right to modify or discontinue any aspect of the website at any time without notice." },
+  { h2: "6.2 Intellectual Property Rights" },
+  { p: "All intellectual property rights associated with this website and its contents (including text, graphics, logos, videos, software, and other digital assets) are owned exclusively by Adders Entertainment Group Ltd. or its licensors. Reproduction or distribution of any content without explicit written consent is strictly prohibited under international copyright laws. Users are granted a limited, non-exclusive, non-transferable licence to access and utilise the website for personal, non-commercial purposes only." },
+  { h2: "6.3 Links to Third-Party Websites" },
+  { p: "Our platform may contain links to external sites for your convenience only; these links do not imply endorsement or affiliation with those websites, and we have no control over their content. Users access third-party resources at their own risk since we cannot guarantee the safety or accuracy of information presented on such platforms. We encourage users to review the terms and privacy policies of any third-party sites they visit." },
+  { h2: "6.4 User Conduct" },
+  { p: "When interacting with our website/platform through comments sections or forums (if applicable), users must adhere to basic standards of decency and refrain from posting any unlawful, obscene, defamatory, threatening, or otherwise inappropriate material that could cause harm or distress to others physically or emotionally. Adders Entertainment Group Ltd. reserves the right to remove inappropriate content without prior notice and to suspend or terminate accounts of users who violate these terms." },
+  { h2: "6.5 Limitation of Liability" },
+  { p: "To the fullest extent permitted by law, we disclaim liability for any direct or indirect damages arising out of users’ interaction with this website (including but not limited to lost profits/revenue) or reliance on information obtained hereon. While we strive to provide accurate information and a seamless user experience on our platform, unforeseen technical issues may arise occasionally due to factors beyond our control (e.g., server failures). In such cases, Adders Entertainment Group Ltd. shall not be held liable for any direct or indirect damages incurred by users during their time spent on our website/platform. Users are responsible for ensuring they have suitable antivirus software installed before downloading any digital assets from us; we cannot accept responsibility for any damage caused to individual systems due to viruses contracted while using our services." },
+
+  { h: "7. Student/Client Code of Conduct" },
+  { p: "Adders Entertainment Group Ltd. is dedicated to fostering a professional, respectful, and productive environment for all students and clients. This Code of Conduct outlines the expected behaviour and standards to ensure a positive experience for everyone within our facilities and during any activities associated with the Group." },
+  { h2: "7.1 Professionalism and Respect" },
+  { p: "All students and clients are expected to conduct themselves professionally and treat staff, fellow students, visitors, and property with respect. This includes refraining from disruptive behaviour, harassment, discrimination, or any actions that could create an unwelcoming or hostile environment. Verbal, physical, or emotional abuse will not be tolerated." },
+  { h2: "7.2 Attendance and Engagement" },
+  { p: "Students are expected to attend all scheduled classes, workshops, and production activities punctually and be prepared to engage actively. Consistent absenteeism or lack of engagement may impact academic progress and may lead to disciplinary action. Clients are expected to adhere to agreed-upon schedules and commitments." },
+  { h2: "7.3 Disciplinary Procedures" },
+  { p: "Violations of this Code of Conduct may result in disciplinary action, ranging from verbal warnings to suspension or expulsion from programmes, or termination of client services. The severity of the action will depend on the nature and frequency of the infraction. All disciplinary procedures will be conducted fairly and transparently, with opportunities for individuals to present their case." },
+
+  { h: "8. Intellectual Property & Equipment Usage Policy" },
+  { p: "This policy outlines the guidelines regarding intellectual property created by students and the usage of Adders Entertainment Group Ltd. equipment. Students retain intellectual property rights to their original creative works, but grant Adders Entertainment Group Ltd. a non-exclusive, royalty-free licence to use, reproduce, and display such works for educational, promotional, and archival purposes. All equipment provided by Adders Entertainment Group Ltd. must be used responsibly and in accordance with safety guidelines. Any damage to equipment due to negligence or misuse will be the responsibility of the student. Unauthorised use or removal of equipment is strictly prohibited and may result in disciplinary action." },
+
+  { h: "9. Contact Details" },
+  { p: "For any questions or concerns regarding our policies or to exercise your individual rights, please contact:" },
+  { ul: [
+    "Name: Joshua Mark Addington",
+    "Role: Director",
+    "Email: director@addersentertainment.org",
+    "Phone: 07450344224",
+  ] },
+  { p: "We are committed to addressing all inquiries and requests promptly and in compliance with applicable laws and regulations. All key organisational roles, including the Health & Safety Officer (HSO) and Designated Safeguarding Lead (DSL), will be formally appointed by September 1st, 2026. An updated policy including their specific details will be provided at that time." },
+];
+
 // Age in whole years on a given date (defaults to the term start date).
 function ageOn(dob, onDate = TERM_START) {
   if (!dob) return null;
@@ -1397,14 +1546,22 @@ function FormContent({ step, d, set, firstName, onDone }) {
         <div style={{ background:C.bg2, border:`1px solid ${C.line}`, borderRadius:14, padding:"22px 24px",
           maxHeight:360, overflowY:"auto", color:C.muted, fontSize:13.5, lineHeight:1.85 }}>
           <div style={{ color:C.copper, fontFamily:"'Cinzel',serif", fontWeight:700, fontSize:16, marginBottom:16 }}>
-            Adders Film School — Membership Policy
+            Adders Entertainment Group Ltd. — Essential Business Policies
           </div>
-          <div style={{ color:`${C.copper}CC`, fontStyle:"italic", marginBottom:18, border:`1px dashed ${C.copper}44`,
-            padding:"12px 16px", borderRadius:10 }}>
-            📄 Your full policy document will be placed here. Send it across and I'll drop it straight in — formatted and scrollable exactly like this.
-          </div>
-          <p>This document sets out the terms and expectations for all Adders Film School members, including attendance requirements, code of conduct, and the use of footage captured during sessions. Members and their guardians are expected to have read and understood all sections before submitting their application.</p>
-          <p style={{ marginTop:14 }}>By proceeding, you confirm that you have scrolled through and accepted the full policy on the previous screen.</p>
+          {POLICY_CONTENT.map((block, i) => {
+            if (block.h) return (
+              <div key={i} style={{ color:C.copper, fontWeight:700, fontSize:14.5, marginTop:i?20:0, marginBottom:8 }}>{block.h}</div>
+            );
+            if (block.h2) return (
+              <div key={i} style={{ color:C.text, fontWeight:600, fontSize:13.5, marginTop:14, marginBottom:6 }}>{block.h2}</div>
+            );
+            if (block.ul) return (
+              <ul key={i} style={{ margin:"6px 0 6px 18px", padding:0 }}>
+                {block.ul.map((item, j) => <li key={j} style={{ marginBottom:4 }}>{item}</li>)}
+              </ul>
+            );
+            return <p key={i} style={{ margin:"0 0 10px" }}>{block.p}</p>;
+          })}
         </div>
         <div style={{ color:C.muted, fontSize:12.5, textAlign:"center", marginTop:14 }}>
           You confirmed acceptance on the previous screen. Submitting locks your application.
