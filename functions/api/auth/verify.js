@@ -35,5 +35,5 @@ export async function onRequestPost({ request, env }) {
   const headers = new Headers();
   headers.append("Set-Cookie", sessionCookie);
   headers.append("Set-Cookie", cookieHeader(PENDING_COOKIE, "", { expires: 0 }));
-  return json({ user: publicUser(user) }, { headers });
+  return json({ user: await publicUser(user, env) }, { headers });
 }

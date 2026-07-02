@@ -1,6 +1,7 @@
 // Password hashing & token helpers — Web Crypto only (Cloudflare Workers safe).
 
-const PBKDF2_ITERATIONS = 210000;
+// OWASP-recommended minimum for PBKDF2-HMAC-SHA256 (2023 guidance).
+const PBKDF2_ITERATIONS = 600000;
 const enc = new TextEncoder();
 
 function toHex(buf) {
