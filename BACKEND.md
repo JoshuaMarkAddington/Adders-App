@@ -92,20 +92,47 @@ This app handles children's personal data, including special-category health
 information, so it is protected on several levels:
 
 1. **At rest by Cloudflare** — D1 databases are encrypted by the platform.
-2. **Owner-only access to personal data** — the application registry is returned
-   **only to the owner account** (see below).
-3. **Hashed secrets** — passwords (PBKDF2-SHA256), session tokens and
-   verification codes (SHA-256) are only ever stored hashed, never in plain
-   text.
+2. **App-level field encryption (AES-256-GCM)** — every personal/health field
+   the app writes is encrypted before it touches the database: Film School
+   applications (guardian details, address, phone, emergency contact,
+   allergies/additional needs/health issues), children's dates of birth, and
+   account phone numbers. See `functions/_lib/encryption.js` for the scheme —
+   AES-256-GCM, keys derived per-purpose with HKDF-SHA256 (never used raw),
+   each ciphertext bound to its own row via AAD, with an optional second
+   independent layer (`DATA_ENCRYPTION_KEY2`) so reading requires both
+   secrets. **Both keys are enabled in this deployment.**
+3. **Owner-only access to personal data** — the application registry is
+   decrypted and returned **only to the owner account** (see below).
+4. **Hashed secrets** — passwords (PBKDF2-SHA256, 600,000 iterations — the
+   current OWASP-recommended minimum), session tokens and verification codes
+   (SHA-256) are only ever stored hashed, never in plain text.
+
+> **Required secrets — the app will not work without these.** `DATA_ENCRYPTION_KEY`
+> (and `DATA_ENCRYPTION_KEY2` for the second layer) must be set as Cloudflare
+> Pages secrets before deploying, or signup / Film School applications / adding
+> a child will fail. Generate with:
+> ```bash
+> node -e 'console.log(require("crypto").randomBytes(32).toString("base64"))'
+> ```
+> then:
+> ```bash
+> npx wrangler pages secret put DATA_ENCRYPTION_KEY --project-name adders-app
+> npx wrangler pages secret put DATA_ENCRYPTION_KEY2 --project-name adders-app
+> ```
+> Store both generated values somewhere safe outside the repo (e.g. a password
+> manager) — if they're lost, encrypted personal data cannot be recovered.
+> For local development, put the same two variables in a `.dev.vars` file at
+> the repo root (already `.gitignore`d, never committed).
 
 > **Note on the `applications` table.** This table is shared with the Adders
-> website, which writes sign-ups in plain text. To keep one consistent table,
-> the in-app form also writes plain text — so personal/health fields are **not**
-> field-level encrypted, only protected by Cloudflare's at-rest encryption and
-> owner-only access. If you want application fields encrypted at the field level,
-> the website code (outside this repo) has to encrypt them too, since it writes
-> to the same table. A field-encryption helper is still available in
-> `functions/_lib/encryption.js` for any new, app-only data.
+> website, which writes sign-ups in plain text (that code lives outside this
+> repo). Rows the app writes are encrypted; rows the website writes stay
+> plaintext until the website is updated to encrypt them too — `decryptField`
+> passes plaintext values through unchanged, so both kinds of row read back
+> correctly in the admin dashboard. **`email` is deliberately left
+> unencrypted** in this table, because the website-to-app account link works
+> by an equality lookup on it (`WHERE lower(email) = lower(?)`), which
+> encrypted ciphertext can't support.
 
 Other GDPR-supporting features:
 

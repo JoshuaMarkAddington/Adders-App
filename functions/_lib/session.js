@@ -1,6 +1,7 @@
 // Session creation / lookup for both users and admins.
 import { randomToken, sha256, newId } from "./crypto.js";
 import { parseCookies, cookieHeader } from "./http.js";
+import { decryptField } from "./encryption.js";
 
 const USER_COOKIE = "ae_session";
 const ADMIN_COOKIE = "ae_admin";
@@ -85,13 +86,14 @@ export function isOwner(env, admin) {
 }
 
 // Shape a user row for the client (never leak the password hash).
-export function publicUser(row) {
+// `env` is required to decrypt the phone field — pass it whenever available.
+export async function publicUser(row, env) {
   if (!row) return null;
   return {
     id: row.id,
     name: row.name,
     email: row.email,
-    phone: row.phone || null,
+    phone: (env && row.phone) ? (await decryptField(env, row.phone, row.id)) || null : row.phone || null,
     member: !!row.member,
     plan: row.plan || null,
     emailVerified: !!row.email_verified,

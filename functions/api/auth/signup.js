@@ -1,6 +1,7 @@
 import { json, error, readJson, cookieHeader } from "../../_lib/http.js";
 import { hashPassword, newId } from "../../_lib/crypto.js";
 import { issueCode } from "../../_lib/otp.js";
+import { encryptField } from "../../_lib/encryption.js";
 
 const PENDING_COOKIE = "ae_pending";
 
@@ -23,9 +24,10 @@ export async function onRequestPost({ request, env }) {
 
   const id = newId("usr");
   const passwordHash = await hashPassword(password);
+  const encryptedPhone = phone ? await encryptField(env, phone, id) : null;
   await db
     .prepare("INSERT INTO users (id, name, email, phone, password_hash) VALUES (?, ?, ?, ?, ?)")
-    .bind(id, name, email, phone || null, passwordHash)
+    .bind(id, name, email, encryptedPhone, passwordHash)
     .run();
 
   const { devCode } = await issueCode(env, db, id, "login", email);
