@@ -84,7 +84,9 @@ npx wrangler pages secret put MAIL_FROM --project-name adders-app
 Add these to this repo's **Settings → Secrets and variables → Actions**:
 `CLOUDFLARE_API_TOKEN` (a token with Pages edit access), `CLOUDFLARE_ACCOUNT_ID`,
 `RESEND_API_KEY`, `MAIL_FROM`. Then run the **Sync Cloudflare secrets** workflow
-(Actions tab → Run workflow) to push them into the Pages project.
+(Actions tab → Run workflow) to push them into the Pages project. The same
+workflow also syncs `DATA_ENCRYPTION_KEY` and `DATA_ENCRYPTION_KEY2` (see
+below) if those GitHub secrets are set too.
 
 ## Data protection & GDPR
 
@@ -114,11 +116,17 @@ information, so it is protected on several levels:
 > ```bash
 > node -e 'console.log(require("crypto").randomBytes(32).toString("base64"))'
 > ```
-> then:
-> ```bash
-> npx wrangler pages secret put DATA_ENCRYPTION_KEY --project-name adders-app
-> npx wrangler pages secret put DATA_ENCRYPTION_KEY2 --project-name adders-app
-> ```
+> then either:
+> - **CLI/dashboard directly:**
+>   ```bash
+>   npx wrangler pages secret put DATA_ENCRYPTION_KEY --project-name adders-app
+>   npx wrangler pages secret put DATA_ENCRYPTION_KEY2 --project-name adders-app
+>   ```
+> - **Or via GitHub** (same method as `RESEND_API_KEY` above): add
+>   `DATA_ENCRYPTION_KEY` and `DATA_ENCRYPTION_KEY2` to this repo's
+>   **Settings → Secrets and variables → Actions**, then run the **Sync
+>   Cloudflare secrets** workflow.
+>
 > Store both generated values somewhere safe outside the repo (e.g. a password
 > manager) — if they're lost, encrypted personal data cannot be recovered.
 > For local development, put the same two variables in a `.dev.vars` file at
